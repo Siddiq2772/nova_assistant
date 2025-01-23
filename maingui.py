@@ -2,7 +2,7 @@ import sys
 import time
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout,QStackedWidget, QLabel, QPushButton, QTextEdit, QGridLayout, QScrollArea, QFrame
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal
-from PyQt5.QtGui import QIcon,QMovie
+from PyQt5.QtGui import QIcon,QMovie,QPixmap
 from PyQt5 import QtWidgets
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
@@ -15,7 +15,7 @@ toggleMic = True
 themeColor = '#0085FF'
 prompt = "none"
 thread = None
-btnStyle = f"background-color: #000000; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:5px"
+btnStyle = f"background-color: #000000; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:15px"
 devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 volume = ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
@@ -230,8 +230,10 @@ class NovaInterface(QWidget):
         sk_label.setAlignment(Qt.AlignCenter)
 
         # NOVA label (centered)
-        self.nova_label = QLabel('NOVA')
-        self.nova_label.setStyleSheet(f"color: {themeColor}; font-size: 70px; font-weight: bold;")
+        self.nova_label = QLabel("nova")
+        img = QPixmap('icons/nova_no_bg.png')
+        self.nova_label.setPixmap(img)
+        # self.nova_label.setStyleSheet(f"color: {themeColor}; font-size: 70px; font-weight: bold;")
 
         # Add widgets to the grid layout
         top_layout.addWidget(sk_label, 0, 0, Qt.AlignTop | Qt.AlignLeft)  # Top-left corner
