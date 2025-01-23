@@ -1,0 +1,16 @@
+google-generativeai
+AppOpener
+pyttsx3
+SpeechRecognition
+wikipedia
+pywhatkit
+pygetwindow
+requests
+pyaudio
+setuptools
+pycaw
+firebase-admin
+pyrebase4
+PyQt5
+aixplain
+pycaw
