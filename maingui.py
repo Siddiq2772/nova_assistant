@@ -115,7 +115,7 @@ class ChatWindow(QWidget):
         self.send_button.setStyleSheet(btnStyle)
         self.input_layout.addWidget(self.send_button)
         self.input_layout.addStretch()
-        
+    
         layout.addLayout(self.input_layout)
         self.setLayout(layout)
 
@@ -198,6 +198,7 @@ class NovaInterface(QWidget):
                         font-weight: bold;
                     """)
         super().__init__()
+        self.chat_window = ChatWindow()
         self.initUI()
         volume.SetMute(False, None)
         self.chat_window.message_input.installEventFilter(self)
@@ -274,17 +275,25 @@ class NovaInterface(QWidget):
         self.bottom_layout.addStretch()
         self.bottom_layout.addWidget(history_button)
         self.bottom_layout.addWidget(self.mic_button)
+        # self.bottom_layout.addLayout(self.chat_window.input_layout)
         self.bottom_layout.addWidget(self.text_mode_button)
         self.bottom_layout.addWidget(self.mute_button)
         self.bottom_layout.addWidget(self.float_window_button)
         self.bottom_layout.addStretch()
 
+        self.bottom = QWidget()
+        self.bottom.setLayout(self.bottom_layout)
+        self.bottom.setStyleSheet(f"border: 5px solid {themeColor}; border-radius: 40px; background-color: black;")
+        self.b = QHBoxLayout()
+        self.b.addStretch()
+        self.b.addWidget(self.bottom)
+        self.b.addStretch()
+
         # Add all sections to the main layout
         self.main_layout.addLayout(top_layout)
         # Add the chat window in the middle
-        self.chat_window = ChatWindow()
         self.main_layout.addWidget(self.chat_window)
-        self.main_layout.addLayout(self.bottom_layout)
+        self.main_layout.addLayout(self.b)
         self.main_layout.addWidget(self.state,alignment=Qt.AlignCenter)
         
         self.setLayout(self.main_layout)

@@ -92,12 +92,6 @@ def processcmd(command):
 )
 
 
-
-
-
-
-
-
     try:
         # Send the refined prompt to the AI
         response = chat.send_message(prompt)
