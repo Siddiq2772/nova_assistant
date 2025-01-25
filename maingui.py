@@ -15,7 +15,7 @@ toggleMic = True
 themeColor = '#0085FF'
 prompt = "none"
 thread = None
-btnStyle = f"background-color: #000000; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:15px"
+btnStyle = f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:30px; border:5px solid {themeColor}"
 devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 volume = ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
@@ -33,6 +33,7 @@ class PopupWindow(QWidget):
         self.setStyleSheet("background-color: #1e1e1e; color: #ffffff;")
         self.setGeometry(0, 0, 300, 300)
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        btnStyle = f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 10px; border-radius:15px; border:5px solid {themeColor}"
 
         
         layout = QVBoxLayout()
@@ -42,10 +43,10 @@ class PopupWindow(QWidget):
         
         self.show_main_button = QPushButton(self)
         self.show_main_button.setIcon(QIcon('icons/popup_open.png'))
-        self.show_main_button.setIconSize(QSize(50, 50))
+        self.show_main_button.setIconSize(QSize(40, 40))
         self.show_main_button.clicked.connect(self.show_main_window)
         self.show_main_button.setStyleSheet(btnStyle)
-        self.show_main_button.setFixedSize(50, 50)
+        self.show_main_button.setFixedSize(60, 60)
 
         self.state = QLabel("")
         self.state.setStyleSheet(f"""
@@ -58,7 +59,8 @@ class PopupWindow(QWidget):
         self.mute_button.setStyleSheet(btnStyle)
         self.mute_button.setIcon(QIcon('icons/mute.png'))
         self.mute_button.setIconSize(QSize(40, 40))
-        self.mute_button.setFixedSize(50, 50)
+        self.mute_button.setFixedSize(60, 60)
+        
 
         bottom_layout = QHBoxLayout()
         bottom_layout.addWidget(self.state, alignment=Qt.AlignCenter)
@@ -92,7 +94,6 @@ class ChatWindow(QWidget):
         self.chat_layout = QVBoxLayout(self.chat_container)
         print(self.maximumWidth())
         self.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
-        # self.chat_container.setStyleSheet(f"background-color: {themeColor};")
         self.chat_layout.setAlignment(Qt.AlignTop)
 
         self.scroll_area.setWidget(self.chat_container)
@@ -221,7 +222,7 @@ class NovaInterface(QWidget):
         self.main_layout = QVBoxLayout()
 
         # Top section with grid layout
-        top_layout = QGridLayout()
+        top_layout = QHBoxLayout()
 
         # SK logo (top-left corner)
         sk_label = QLabel('SK')
@@ -230,27 +231,35 @@ class NovaInterface(QWidget):
         sk_label.setAlignment(Qt.AlignCenter)
 
         # NOVA label (centered)
-        self.nova_label = QLabel("nova")
+        self.nova_icon = QLabel()
         img = QPixmap('icons/nova_no_bg.png')
-        self.nova_label.setPixmap(img)
-        # self.nova_label.setStyleSheet(f"color: {themeColor}; font-size: 70px; font-weight: bold;")
+        self.nova_icon.setPixmap(img)
+        nova_label = QLabel("NOVA")
+        
+        nova_label.setStyleSheet(f"color: {themeColor}; font-size: 30px; font-weight: bold;")
 
-        # Add widgets to the grid layout
-        top_layout.addWidget(sk_label, 0, 0, Qt.AlignTop | Qt.AlignLeft)  # Top-left corner
-        top_layout.addWidget(self.nova_label, 0, 1, Qt.AlignTop | Qt.AlignCenter)
+        history_button = QPushButton('Show Chat History')
+        history_button.setStyleSheet(f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
+        history_button.setIcon(QIcon('icons/menu.png'))
+        history_button.setIconSize(QSize(30, 30))
+
+        # Add widgets to the top layout
+        top_layout.addWidget(self.nova_icon)
+        top_layout.addWidget(nova_label)
+        top_layout.addStretch()
+        top_layout.addWidget(history_button)
+        top_layout.addStretch()
+        top_layout.addWidget(sk_label)  
+
 
         # Stretch settings for center and left side
-        top_layout.setColumnStretch(0, 1)
-        top_layout.setColumnStretch(1, 5)
+        
 
         self.mic_button = self.create_mic_button()       
         self.mic_button.clicked.connect(self.micon)
         # Bottom but.bottom_layout
         self.bottom_layout = QHBoxLayout()
-        history_button = QPushButton('Show Chat History')
-        history_button.setStyleSheet(btnStyle)
-        history_button.setIcon(QIcon('icons/menu.png'))
-        history_button.setIconSize(QSize(30, 30))
+        
         # history_button.setBackgroundRole(Qt.black)
 
         self.text_mode_button = QPushButton()
@@ -275,10 +284,9 @@ class NovaInterface(QWidget):
         # self.float_window_button.setBackgroundRole(Qt.black)
 
         self.bottom_layout.addStretch()
-        self.bottom_layout.addWidget(history_button)
+        self.bottom_layout.addWidget(self.text_mode_button)
         self.bottom_layout.addWidget(self.mic_button)
         # self.bottom_layout.addLayout(self.chat_window.input_layout)
-        self.bottom_layout.addWidget(self.text_mode_button)
         self.bottom_layout.addWidget(self.mute_button)
         self.bottom_layout.addWidget(self.float_window_button)
         self.bottom_layout.addStretch()
@@ -360,7 +368,7 @@ class NovaInterface(QWidget):
 
     def create_mic_button(self):
         global movie
-        mic_size = 200
+        mic_size = 150
         mic_button = QPushButton(self)
         mic_button.setFixedSize(mic_size * 2, mic_size)
 
