@@ -225,7 +225,7 @@ class NovaInterface(QWidget):
         top_layout = QHBoxLayout()
 
         # SK logo (top-left corner)
-        self.sk_label = QLabel()
+        self.sk_label = QLabel("U")
         self.sk_label.setStyleSheet(f"background-color: black; color: {themeColor}; font-size:{BtnTextFont};  padding: 5px; border-radius: 20px; border:5px solid {themeColor};")
         self.sk_label.setFixedSize(50, 50)
         self.sk_label.setAlignment(Qt.AlignCenter)
