@@ -1,8 +1,6 @@
-import subprocess
 import webbrowser
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMessageBox
-import sys,time,os
+from PyQt5 import QtCore,  QtWidgets
+import sys,os
 import database as db
 from  CustomMessageBox import CustomMessageBox
 

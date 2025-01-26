@@ -1,8 +1,6 @@
-import threading
 import pyttsx3
 import speech_recognition as sr
 import datetime
-import os
 import requests
 import wikipedia
 import webbrowser
@@ -13,7 +11,6 @@ import AppOpener
 import gemini_ai
 import time
 import io
-from CustomMessageBox import CustomMessageBox,CustomInputBox
 import sys
 import psutil
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
