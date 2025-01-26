@@ -128,7 +128,6 @@
         {"user_input": "make the window small", "assistant_output": "minimise window"}
       ]
     },
-    
     {
       "command": "mute volume",
       "description": "Mutes system volume.",
@@ -139,10 +138,18 @@
     },
     {
       "command": "unmute volume",
-      "description": "Mutes system volume.",
+      "description": "Unmutes system volume.",
       "examples": [
-        {"user_input": "shut sound", "assistant_output": "mute"},
-        {"user_input": "mute audio", "assistant_output": "mute"}
+        {"user_input": "turn sound on", "assistant_output": "unmute"},
+        {"user_input": "enable audio", "assistant_output": "unmute"}
+      ]
+    },
+    {
+      "command": "help",
+      "description": "Provides guidance on how to use the assistant.",
+      "examples": [
+        {"user_input": "i need help", "assistant_output": "help"},
+        {"user_input": "how to use assistant", "assistant_output": "help"}
       ]
     }
   ]

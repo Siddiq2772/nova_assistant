@@ -179,3 +179,33 @@ def decrypt_data(encrypted_data):
 # log_in("shady@gmail.com", "Shadab@1234")
 # save_conversation("this","i m kknoo")
 # get_conversations()
+def get_user_initials():
+    try:
+        # Read the user ID from the user_config.txt file
+        with open("user_config.txt", "r") as fr:
+            user_id = fr.read().strip()
+
+        # Fetch the user's document from Firestore
+        user_doc = db.collection('users').document(user_id).get()
+
+        if user_doc.exists:
+            # Extract firstName and lastName
+            user_data = user_doc.to_dict()
+            first_name = user_data.get('firstName', '')
+            last_name = user_data.get('lastName', '')
+
+            # Get the initials
+            first_initial = first_name[0].upper() if first_name else ''
+            last_initial = last_name[0].upper() if last_name else ''
+
+            # Return the initials
+            initials = f"{first_initial}{last_initial}"
+            print(f"User Initials: {initials}")
+            return initials
+        else:
+            print("User document does not exist.")
+            return None
+    except Exception as e:
+        print(f"Error retrieving user initials: {e}")
+        traceback.print_exc()
+        return None

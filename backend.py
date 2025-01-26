@@ -48,7 +48,7 @@ def takecmd():
     with sr.Microphone() as source:
         print("Listening...")
         if mic_off: return 
-        r.pause_threshold = 0.8
+        r.pause_threshold = 1
         if mic_off: return 
         try:
             audio = r.listen(source, timeout=5, phrase_time_limit=5)  # Increased timeout

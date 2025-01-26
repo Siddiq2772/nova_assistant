@@ -106,14 +106,14 @@ class ChatWindow(QWidget):
         self.input_layout.addStretch()
         self.message_input = QTextEdit()
         self.message_input.setPlaceholderText("Enter Your Prompt")
-        self.message_input.setStyleSheet(f"font-size: {BtnTextFont};")
+        self.message_input.setStyleSheet(f"background-color: black; font-size: {BtnTextFont}; color: white; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         self.message_input.setFixedSize(600,100)
         self.input_layout.addWidget(self.message_input)
 
         self.send_button = QPushButton("Send")
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setFixedWidth(100)
-        self.send_button.setStyleSheet(btnStyle)
+        self.send_button.setStyleSheet(f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         self.input_layout.addWidget(self.send_button)
         self.input_layout.addStretch()
     
@@ -225,10 +225,10 @@ class NovaInterface(QWidget):
         top_layout = QHBoxLayout()
 
         # SK logo (top-left corner)
-        sk_label = QLabel('SK')
-        sk_label.setStyleSheet(f"background-color: {themeColor}; color: #ffffff; font-weight: bold; padding: 5px; border-radius: 20px;")
-        sk_label.setFixedSize(40, 40)
-        sk_label.setAlignment(Qt.AlignCenter)
+        self.sk_label = QLabel()
+        self.sk_label.setStyleSheet(f"background-color: black; color: {themeColor}; font-size:{BtnTextFont};  padding: 5px; border-radius: 20px; border:5px solid {themeColor};")
+        self.sk_label.setFixedSize(50, 50)
+        self.sk_label.setAlignment(Qt.AlignCenter)
 
         # NOVA label (centered)
         self.nova_icon = QLabel()
@@ -249,7 +249,7 @@ class NovaInterface(QWidget):
         top_layout.addStretch()
         top_layout.addWidget(history_button)
         top_layout.addStretch()
-        top_layout.addWidget(sk_label)  
+        top_layout.addWidget(self.sk_label)  
 
 
         # Stretch settings for center and left side
@@ -391,7 +391,10 @@ class NovaInterface(QWidget):
             self.toggle_input_mode()
         self.hide()
         self.popup.show()
-
+    
+    def set_name(self,text):
+        self.sk_label.setText(text)
+        
     
     def eventFilter(self, obj, event):
         if obj == self.chat_window.message_input and event.type() == event.KeyPress:
@@ -501,7 +504,7 @@ class ChatThread(QThread):
     shutdown = pyqtSignal()
     sleep = pyqtSignal()
     state = pyqtSignal(str)
-
+    name = pyqtSignal(str)
     def send_message(self,message):
                 speak("Please provide the phone number to which I should send messages.")
                 number = CustomInputBox.show_input_dialog("Please provide the phone number to which I should send messages")
@@ -528,8 +531,10 @@ class ChatThread(QThread):
      global thread
      thread = True
      try:
+        self.name.emit(db.get_user_initials())
         conversations = db.get_conversations()
         if conversations :
+            
             for conv in conversations:
             # Get the encrypted data as a string
                 encrypted_user_input = conv.to_dict().get('user_input')
@@ -546,7 +551,7 @@ class ChatThread(QThread):
 
         # Simulate receiving a message
         wish()
-        self.message_received.emit("How can I help you, Sir?")
+        self.state.emit("How can I help you, Sir?")
         speak("How can I help you, Sir?")
     
         while True:    
@@ -628,6 +633,7 @@ if __name__ == '__main__':
         chat_thread.shutdown.connect(ex.shutdown_)
         chat_thread.sleep.connect(ex.sleep_)
         chat_thread.state.connect(ex.state_)
+        chat_thread.name.connect(ex.set_name)
         chat_thread.start()
         sys.exit(app.exec_())
     except Exception as e:
