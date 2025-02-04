@@ -32,9 +32,8 @@ def speak(text,speed=200):
         engine.endLoop()
     else:
         engine.stop()
-    for line in text.split('\n'):
-        engine.say(line)
-        engine.runAndWait()
+    engine.say(text)
+    engine.runAndWait()
     # engine.say(text)
     # engine.runAndWait()
 

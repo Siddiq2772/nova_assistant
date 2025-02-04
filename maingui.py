@@ -14,8 +14,8 @@ BtnTextFont = '25px'
 toggleMic = True
 themeColor = '#0085FF'
 prompt = "none"
-thread = None
-btnStyle = f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:30px; border:5px solid {themeColor}"
+thread = True
+btnStyle = f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:30px; border:5px solid {themeColor}"
 devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 volume = ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
@@ -30,17 +30,23 @@ class PopupWindow(QWidget):
 
     def initUI(self):
         self.setWindowTitle('NOVA')
-        self.setStyleSheet("background-color: #1e1e1e; color: #ffffff;")
+        self.setStyleSheet("background-color: #07151E; color: #ffffff;")
         self.setGeometry(0, 0, 300, 300)
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
-        btnStyle = f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 10px; border-radius:15px; border:5px solid {themeColor}"
+        btnStyle = f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 10px; border-radius:15px; border:5px solid {themeColor}"
 
-        
+        # Main vertical layout
         layout = QVBoxLayout()
-
+        
+        # Top section with centered mic button
+        mic_container = QHBoxLayout()
+        mic_container.addStretch()
         self.mic_button = self.main_window.create_mic_button()
         self.mic_button.clicked.connect(self.main_window.micon)
+        mic_container.addWidget(self.mic_button)
+        mic_container.addStretch()
         
+        # Create controls
         self.show_main_button = QPushButton(self)
         self.show_main_button.setIcon(QIcon('icons/popup_open.png'))
         self.show_main_button.setIconSize(QSize(40, 40))
@@ -54,21 +60,22 @@ class PopupWindow(QWidget):
                         font-size: 30px;
                         font-weight: bold;
                     """)
+        self.state.setFixedWidth(200)
         
         self.mute_button = QPushButton()
         self.mute_button.setStyleSheet(btnStyle)
         self.mute_button.setIcon(QIcon('icons/mute.png'))
         self.mute_button.setIconSize(QSize(40, 40))
         self.mute_button.setFixedSize(60, 60)
-        
 
+        # Bottom section with controls
         bottom_layout = QHBoxLayout()
         bottom_layout.addWidget(self.state, alignment=Qt.AlignCenter)
         bottom_layout.addWidget(self.mute_button)
         bottom_layout.addWidget(self.show_main_button)
 
-        
-        layout.addWidget(self.mic_button)
+        # Add all layouts to main layout
+        layout.addLayout(mic_container)
         layout.addLayout(bottom_layout, Qt.AlignRight)
 
         self.setLayout(layout)
@@ -87,7 +94,7 @@ class ChatWindow(QWidget):
         # Scrollable area for chat bubbles
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setStyleSheet("background-color: #1e1e1e; border: none;")
+        self.scroll_area.setStyleSheet("background-color: #0F1C25; border: none;")
 
         # Widget to hold the layout of chat bubbles
         self.chat_container = QWidget()
@@ -106,14 +113,14 @@ class ChatWindow(QWidget):
         self.input_layout.addStretch()
         self.message_input = QTextEdit()
         self.message_input.setPlaceholderText("Enter Your Prompt")
-        self.message_input.setStyleSheet(f"background-color: black; font-size: {BtnTextFont}; color: white; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
+        self.message_input.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: #6CCAFF; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         self.message_input.setFixedSize(600,100)
         self.input_layout.addWidget(self.message_input)
 
         self.send_button = QPushButton("Send")
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setFixedWidth(100)
-        self.send_button.setStyleSheet(f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
+        self.send_button.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         self.input_layout.addWidget(self.send_button)
         self.input_layout.addStretch()
     
@@ -123,7 +130,7 @@ class ChatWindow(QWidget):
         # Styling
         self.setStyleSheet("""
             QTextEdit {
-                background-color: #333333;
+                background-color: #07151E;
                 color: white;
                 border: 1px solid #ccc;
                 border-radius: 20px;
@@ -136,6 +143,7 @@ class ChatWindow(QWidget):
                 border-radius: 10px;
                 font-size: 20px;
                 padding: 10px;
+                background-color: #07151E;
             }
             QPushButton:hover {
                 background-color: #128C7E;
@@ -153,7 +161,8 @@ class ChatWindow(QWidget):
         # Create a bubble widget for the message
         bubble_widget = self.create_bubble_widget(message, is_sent)
         self.chat_layout.addWidget(bubble_widget)
-        self.scroll_area.verticalScrollBar().setSliderPosition(self.scroll_area.verticalScrollBar().maximum())
+        self.scroll_area.verticalScrollBar().setSliderPosition(self.scroll_area.verticalScrollBar().maximum()*2)
+        self.scroll_area.verticalScrollBar().setSliderDown(True)
         
 
     
@@ -169,12 +178,13 @@ class ChatWindow(QWidget):
         bubble.setWordWrap(True)
         bubble.setMaximumWidth(int(self.scroll_area.width() * 0.7))
         bubble.setStyleSheet(f"""
-            background-color: {themeColor if is_sent else '#1e1e1e'};
-            color: white;
-            border-radius: 10px;
-            padding: 10px;
-            font-size:{BtnTextFont}
+        background-color: {themeColor if is_sent else '#0A1E2A'};
+        color: white;
+        border-radius: 10px;
+        padding: 10px;
+        font-size:{BtnTextFont}
         """)  
+  
 
         if is_sent:
             bubble_layout.addStretch()  # Right-align sent messages
@@ -192,6 +202,7 @@ class NovaInterface(QWidget):
     def __init__(self):
         global movie
         movie = QMovie("icons/mic_ani.gif")
+        movie.speed = 250
         self.state = QLabel("")
         self.state.setStyleSheet(f"""
                         color:{themeColor};
@@ -214,7 +225,7 @@ class NovaInterface(QWidget):
                     """)
     def initUI(self):
         self.setWindowTitle('NOVA')
-        self.setStyleSheet("background-color: #1e1e1e; color: #ffffff;")
+        self.setStyleSheet("background-color: #0F1C25; color: #ffffff;")
         self.popup = PopupWindow(self)
         self.setMinimumSize(1000, 1000)
 
@@ -226,7 +237,7 @@ class NovaInterface(QWidget):
 
         # SK logo (top-left corner)
         self.sk_label = QLabel("U")
-        self.sk_label.setStyleSheet(f"background-color: black; color: {themeColor}; font-size:{BtnTextFont};  padding: 5px; border-radius: 20px; border:5px solid {themeColor};")
+        self.sk_label.setStyleSheet(f"background-color: #07151E; color: {themeColor}; font-size:{BtnTextFont};  padding: 5px; border-radius: 20px; border:5px solid {themeColor};")
         self.sk_label.setFixedSize(50, 50)
         self.sk_label.setAlignment(Qt.AlignCenter)
 
@@ -239,7 +250,7 @@ class NovaInterface(QWidget):
         nova_label.setStyleSheet(f"color: {themeColor}; font-size: 30px; font-weight: bold;")
 
         history_button = QPushButton('Show Chat History')
-        history_button.setStyleSheet(f"background-color: black; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
+        history_button.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         history_button.setIcon(QIcon('icons/menu.png'))
         history_button.setIconSize(QSize(30, 30))
 
@@ -257,6 +268,7 @@ class NovaInterface(QWidget):
 
         self.mic_button = self.create_mic_button()       
         self.mic_button.clicked.connect(self.micon)
+        self.mic_button.setStyleSheet("border: none;")
         # Bottom but.bottom_layout
         self.bottom_layout = QHBoxLayout()
         
@@ -293,7 +305,7 @@ class NovaInterface(QWidget):
 
         self.bottom = QWidget()
         self.bottom.setLayout(self.bottom_layout)
-        self.bottom.setStyleSheet(f"border: 5px solid {themeColor}; border-radius: 40px; background-color: black;")
+        self.bottom.setStyleSheet(f"border: 5px solid {themeColor}; border-radius: 40px; background-color: #07151E;")
         self.b = QHBoxLayout()
         self.b.addStretch()
         self.b.addWidget(self.bottom)
@@ -368,12 +380,12 @@ class NovaInterface(QWidget):
 
     def create_mic_button(self):
         global movie
-        mic_size = 150
+        mic_size = 200
         mic_button = QPushButton(self)
-        mic_button.setFixedSize(mic_size * 2, mic_size)
+        mic_button.setFixedSize(mic_size , mic_size)
 
         mic_label = QLabel(mic_button)
-        mic_label.setGeometry(0, 0, mic_size * 2, mic_size)
+        mic_label.setGeometry(0, 0, mic_size , mic_size)
 
         
         mic_label.setMovie(movie)
@@ -424,6 +436,8 @@ class NovaInterface(QWidget):
         if b.mic_off: 
             b.mic_off = False
             movie.start()
+            if engine.isBusy():
+                engine.stop()
             speak("How can I help you, Sir?")
         else: 
             b.mic_off = True
@@ -598,7 +612,8 @@ class ChatThread(QThread):
             self.message_received.emit(result)
             db.save_conversation(query,result)
             self.state.emit("Speaking...")
-            speak(result)
+            for r in result.split("\n"):
+                speak(r)
             prompt ="none"
             if result.__contains__("Goodbye! "): 
                 self.state.emit("")
