@@ -1,7 +1,7 @@
 import sys,os
-import time
+import time,threading
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout,QStackedWidget, QLabel, QPushButton, QTextEdit,  QScrollArea, QFrame
-from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal,QPropertyAnimation
 from PyQt5.QtGui import QIcon,QMovie,QPixmap
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
@@ -84,7 +84,7 @@ class PopupWindow(QWidget):
         self.hide()
         self.main_window.show_main_interface()
 
-class ChatWindow(QWidget):
+class ChatWindow(QWidget,QThread):
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -106,6 +106,7 @@ class ChatWindow(QWidget):
         self.scroll_area.setWidget(self.chat_container)
 
         layout.addWidget(self.scroll_area)
+
 
         # Input area
 
@@ -149,6 +150,12 @@ class ChatWindow(QWidget):
                 background-color: #128C7E;
             }
         """)
+        scrollbar = self.scroll_area.verticalScrollBar()
+        animation = QPropertyAnimation(scrollbar, b"value")
+        animation.setDuration(500)  # 500ms animation
+        animation.setStartValue(scrollbar.value())
+        animation.setEndValue(scrollbar.maximum())
+        animation.start()
 
     def send_message(self):
         global prompt
@@ -161,9 +168,9 @@ class ChatWindow(QWidget):
         # Create a bubble widget for the message
         bubble_widget = self.create_bubble_widget(message, is_sent)
         self.chat_layout.addWidget(bubble_widget)
-        self.scroll_area.verticalScrollBar().setSliderPosition(self.scroll_area.verticalScrollBar().maximum()*2)
-        self.scroll_area.verticalScrollBar().setSliderDown(True)
-        
+    
+    
+    
 
     
 
@@ -176,12 +183,13 @@ class ChatWindow(QWidget):
         
         bubble = QLabel(message)
         bubble.setWordWrap(True)
-        bubble.setMaximumWidth(int(self.scroll_area.width() * 0.7))
+        if not is_sent:
+            bubble.setFixedWidth(int(self.scroll_area.width()*0.5))
         bubble.setStyleSheet(f"""
         background-color: {themeColor if is_sent else '#0A1E2A'};
         color: white;
         border-radius: 10px;
-        padding: 10px;
+        padding: {"10px" if is_sent else "0px"};
         font-size:{BtnTextFont}
         """)  
   
@@ -217,6 +225,7 @@ class NovaInterface(QWidget):
         self.is_popup_mode = False
         # demo(self)
         state = QLabel("Listening...")
+        
         
         state.setStyleSheet(f"""
                         color:{themeColor};
@@ -436,6 +445,7 @@ class NovaInterface(QWidget):
         if b.mic_off: 
             b.mic_off = False
             movie.start()
+            volume.SetMute(False, None)
             if engine.isBusy():
                 engine.stop()
             speak("How can I help you, Sir?")
@@ -453,16 +463,16 @@ class NovaInterface(QWidget):
 
         # Get the current mute state
         is_muted = volume.GetMute()
+        volume.SetMute(not is_muted, None)
         if is_muted:
             self.mute_button.setIcon(QIcon('icons/mute.png'))
             self.popup.mute_button.setIcon(QIcon('icons/mute.png'))
+
         else:
             self.mute_button.setIcon(QIcon('icons/unmute.png'))
             self.popup.mute_button.setIcon(QIcon('icons/unmute.png'))
-            speak("Muted")
             
         # Toggle the mute state
-        volume.SetMute(not is_muted, None)
         print(f"Muted: {not is_muted}")
 
     # Toggle mute/unmute
@@ -609,11 +619,14 @@ class ChatThread(QThread):
                          
                 # result = "message send" 
 
-            self.message_received.emit(result)
+            
             db.save_conversation(query,result)
             self.state.emit("Speaking...")
             for r in result.split("\n"):
+                self.message_received.emit(r)
                 speak(r)
+            
+
             prompt ="none"
             if result.__contains__("Goodbye! "): 
                 self.state.emit("")
