@@ -168,6 +168,8 @@ class ChatWindow(QWidget,QThread):
         # Create a bubble widget for the message
         bubble_widget = self.create_bubble_widget(message, is_sent)
         self.chat_layout.addWidget(bubble_widget)
+        # print(bubble_widget.height())
+        self.scroll_area.verticalScrollBar().setSliderPosition(self.scroll_area.verticalScrollBar().maximum()+(bubble_widget.height()*20))
     
     
     
@@ -210,7 +212,7 @@ class NovaInterface(QWidget):
     def __init__(self):
         global movie
         movie = QMovie("icons/mic_ani.gif")
-        movie.speed = 250
+        movie.speed = -500
         self.state = QLabel("")
         self.state.setStyleSheet(f"""
                         color:{themeColor};
@@ -314,7 +316,7 @@ class NovaInterface(QWidget):
 
         self.bottom = QWidget()
         self.bottom.setLayout(self.bottom_layout)
-        self.bottom.setStyleSheet(f"border: 5px solid {themeColor}; border-radius: 40px; background-color: #07151E;")
+        self.bottom.setStyleSheet(f"border: 5px solid {themeColor}; border-radius: 40px; background-color: #07151E; padding: 0px;")
         self.b = QHBoxLayout()
         self.b.addStretch()
         self.b.addWidget(self.bottom)
@@ -445,10 +447,7 @@ class NovaInterface(QWidget):
         if b.mic_off: 
             b.mic_off = False
             movie.start()
-            volume.SetMute(False, None)
-            if engine.isBusy():
-                engine.stop()
-            speak("How can I help you, Sir?")
+
         else: 
             b.mic_off = True
             movie.stop()
@@ -515,7 +514,6 @@ class NovaInterface(QWidget):
         self.chat_window.add_message(ret)
         speak(ret)
 
-
     
 #     result = CustomMessageBox.show_message(self,"Welcome to NOVA\n\nNOVA is an AI assistant which can control your desktop based on your command.")
 
@@ -581,6 +579,7 @@ class ChatThread(QThread):
         while True:    
             if flag:
                 flag= False
+            
             self.state.emit("Listening...")
 
             if toggleMic and not b.mic_off:
@@ -599,7 +598,7 @@ class ChatThread(QThread):
             self.state.emit("Thinking...")
             
             self.message_received.emit("You:"+query)
-            result = input_from_gui(query,self)
+            result = input_from_gui(query,self).replace("*","")
             if result =="restart_": 
                 self.restart.emit()
                 result = "restarting your computer"
@@ -621,9 +620,16 @@ class ChatThread(QThread):
 
             
             db.save_conversation(query,result)
-            self.state.emit("Speaking...")
             for r in result.split("\n"):
                 self.message_received.emit(r)
+                time.sleep(0.05)
+                
+            self.state.emit("Speaking...")
+            
+            for r in result.split("," or "." or ":" or "!" or "?" or ";" or "/n"):
+                if not b.mic_off:
+                    self.micon.emit()
+                    break
                 speak(r)
             
 
@@ -632,14 +638,12 @@ class ChatThread(QThread):
                 self.state.emit("")
                 thread = False
                 break
-
-            time.sleep(1)         
  
-            speak("Sir, Do you have any other work")
+            
             if toggleMic:
                 self.micon.emit()
-
-            time.sleep(2)
+            time.sleep(1)
+            speak("Sir, Do you have any other work")
           
      except Exception as e:
             print(e)

@@ -31,8 +31,8 @@ def speak(text,speed=200):
     
     if engine._inLoop:
         engine.endLoop()
-
-
+    else:
+        engine.stop()
     engine.say(text)
     engine.runAndWait()
     # engine.say(text)
