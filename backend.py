@@ -11,6 +11,7 @@ import AppOpener
 import gemini_ai
 import time
 import io
+from database import get_username
 import sys
 import psutil
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -21,7 +22,7 @@ obj=None
 msg = None
 engine = pyttsx3.init("sapi5")
 commands = ["open", "shutdown", "ip address of my device", "minimise window","close window","maximise window","go to","search on google","search on wikipedia",
-            "current temperature","send message","ai mode","sleep","current date","restart","play video on youtube","help","close","send message","battery","current time","Incomplete","mute","unmute","exit"]
+            "current temperature","send message","ai mode","sleep","current date","restart","play video on youtube","help","close","send message","battery","current time","Incomplete","mute","unmute","exit","user"]
 # Text to speak function
 def set_speech_rate(rate):
     engine.setProperty('rate', rate)
@@ -140,8 +141,9 @@ def send_message(message):
     msg = message
     return f"sending  message {message}"
 
-def incomplete_command(complete_command):
-    return f"The command you provide is incomplete command, the complete {complete_command}"
+# def incomplete_command(complete_command):
+#     return f"You can Try: {complete_command} \n {ai_mode(complete_command)} "
+
 
 def open_apps(app_name):
     # pass
@@ -205,74 +207,74 @@ def battery():
 
 def help_function():
     help_text = (
-        "Welcome to the Command Assistant!, My name is Nova, Here are some commands you can use:\n\n"
-        "1. **Go to <website name>**\n"
-        "   - Example: 'Go to amazon' or 'Go to google'\n"
-        "   - Opens the website in your browser. The assistant will append '.com' to the website name if not specified.\n\n"
+        "Welcome to the Command Assistant!, My name is Nova, Here are some commands you can use: \n \n" +
+        "1. **Go to <website name>**\n"+
+        "   - Example: 'Go to amazon' or 'Go to google'\n"+
+        "   - Opens the website in your browser. The assistant will append '.com' to the website name if not specified. \n \n"
         
         "2. **Search on Google <query>**\n"
         "   - Example: 'Search on Google Python tutorials'\n"
-        "   - Performs a Google search with the specified query.\n\n"
+        "   - Performs a Google search with the specified query. \n \n"
         
         "3. **Open <app/system tool>**\n"
         "   - Example: 'Open calculator' or 'Open notepad'\n"
-        "   - Opens the specified application or system tool.\n\n"
+        "   - Opens the specified application or system tool. \n \n"
         
         "4. **IP address of my device**\n"
         "   - Example: 'IP address of my device'\n"
-        "   - Provides the IP address of your device.\n\n"
+        "   - Provides the IP address of your device. \n \n"
         
         "5. **Search on Wikipedia <topic>**\n"
         "   - Example: 'Search on Wikipedia Python programming'\n"
-        "   - Searches Wikipedia for the specified topic and reads a summary.\n\n"
+        "   - Searches Wikipedia for the specified topic and reads a summary. \n \n"
         
         "6. **Send message**\n"
         "   - Example: 'Send message'\n"
-        "   - Prompts you to provide a phone number and a message to send via WhatsApp.\n\n"
+        "   - Prompts you to provide a phone number and a message to send via WhatsApp. \n \n"
         
         "7. **Current temperature <city_name>**\n"
         "   - Example: 'Current temperature in New York'\n"
-        "   - Provides the current temperature for the specified city.\n\n"
+        "   - Provides the current temperature for the specified city. \n \n"
         
         "8. **Play video on YouTube <video_name>**\n"
         "   - Example: 'Play video on YouTube Python tutorial'\n"
-        "   - Searches for and plays the specified video on YouTube.\n\n"
+        "   - Searches for and plays the specified video on YouTube. \n \n"
         
         "9. **Current time**\n"
         "   - Example: 'Current time'\n"
-        "   - Provides the current time.\n\n"
+        "   - Provides the current time. \n \n"
         
         "10. **AI mode <query>**\n"
         "    - Example: 'AI mode What is the weather like?'\n"
-        "    - Interacts with the AI model to process your query in AI mode.\n\n"
+        "    - Interacts with the AI model to process your query in AI mode. \n \n"
         
         "11. **Shutdown**\n"
         "    - Example: 'Shutdown'\n"
-        "    - Shuts down the computer.\n\n"
+        "    - Shuts down the computer. \n \n"
         
         "12. **Restart**\n"
         "    - Example: 'Restart'\n"
-        "    - Restarts the computer.\n\n"
+        "    - Restarts the computer. \n \n"
         
         "13. **Sleep**\n"
         "    - Example: 'Sleep'\n"
-        "    - Puts the computer into sleep mode.\n\n"
+        "    - Puts the computer into sleep mode. \n \n"
         
         "14. **Minimise window**\n"
         "    - Example: 'Minimise window'\n"
-        "    - Minimizes the currently active window.\n\n"
+        "    - Minimizes the currently active window. \n \n"
         
         "15. **Maximise window**\n"
         "    - Example: 'Maximise window'\n"
-        "    - Maximizes the currently active window.\n\n"
+        "    - Maximizes the currently active window. \n \n"
         
         "16. **Close window**\n"
         "    - Example: 'Close window'\n"
-        "    - Closes the currently active window.\n\n"
+        "    - Closes the currently active window. \n \n"
         
         "17. **No thanks exit**\n"
         "    - Example: 'No thanks exit'\n"
-        "    - Exits the assistant.\n\n"
+        "    - Exits the assistant. \n \n"
         
         "If you need help with a specific command or have any questions, just ask!"
     )
@@ -346,8 +348,12 @@ def open_website(web_name):
         return f"Opening {web_name} in your browser..."
     except Exception as e:
         return f"Failed to open {web_name}"
-        
-        
+
+def user_name():
+    f_name,l_name=get_username()
+    return f"Your name is {f_name} {l_name}. How may I assist you further?"
+
+ 
 def close_apps(app_name):
     try:
         captured_output = io.StringIO()
@@ -419,7 +425,8 @@ command_actions={
     "battery":battery,
     "help":help_function,
     "close":close_apps,
-    "Incomplete":incomplete_command,
+    "user":user_name,
+    # "Incomplete":incomplete_command,
     "exit":exit_fucntion
 }
 
@@ -471,7 +478,6 @@ def microphone():
                 print(e)
             time.sleep(5)
             speak("Sir, Do you have any other work")
-    
 
 def keyboard():
         wish()

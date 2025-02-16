@@ -151,6 +151,15 @@
         {"user_input": "i need help", "assistant_output": "help"},
         {"user_input": "how to use assistant", "assistant_output": "help"}
       ]
+    },
+    {
+      "command": "what is my name",
+      "description": "Returns the user's name.",
+      "examples": [
+        {"user_input": "what is my name", "assistant_output": "user"},
+        {"user_input": "do you know me?", "assistant_output": "user"},
+        {"user_input": "who am I?", "assistant_output": "user"}
+      ]
     }
   ]
 }
