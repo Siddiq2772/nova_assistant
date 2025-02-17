@@ -41,26 +41,49 @@ def speak(text,speed=200):
 
 
 # Voice to text
-def takecmd():
+def takecmd(mic_off=False):  # Added mic_off parameter with default value
     r = sr.Recognizer()
+
     with sr.Microphone() as source:
         print("Listening...")
-        if mic_off: return 
+
+        if mic_off:
+            return None  # Return None if mic is off
+
         r.pause_threshold = 1
-        if mic_off: return 
+        r.non_speaking_duration = 0.5  # Adjust for better phrase detection
+        r.phrase_threshold = 0.3 # Adjust for better phrase detection
+
+        if mic_off:
+            return None
+
         try:
-            audio = r.listen(source, timeout=5, phrase_time_limit=5)  # Increased timeout
-            if mic_off: return 
+            print("Calibrating microphone...") # Calibrate before listening
+            r.adjust_for_ambient_noise(source, duration=1)  # Calibrate for ambient noise
+
+            print("Start speaking...")
+            audio = r.listen(source, timeout=10, phrase_time_limit=10) # Increased timeout
+
+            if mic_off:
+                return None
+
+            
+            return audio  # Convert to lowercase for consistency
+
         except sr.WaitTimeoutError:
-            speak("Listening timed out. Please try again.")
-            return 
+            print("Listening timed out. Please try again.") # Print to console for debugging
+            return None # Return None on timeout
+
         except sr.UnknownValueError:
-            speak("Sorry, I did not understand that.")
-            return 
-        except sr.RequestError:
-            speak("Sorry, there was an issue with the request.")
-            return 
-        return audio
+            print("Sorry, I did not understand that.") # Print to console for debugging
+            return None
+
+        except sr.RequestError as e:
+            print(f"Sorry, there was an issue with the request: {e}") # Print to console for debugging
+            return None
+        except Exception as e: # Catch any other exceptions
+            print(f"An unexpected error occurred: {e}")
+            return None
     
 def recoginze(audio):
     print("Recognizing...")
@@ -141,8 +164,8 @@ def send_message(message):
     msg = message
     return f"sending  message {message}"
 
-# def incomplete_command(complete_command):
-#     return f"You can Try: {complete_command} \n {ai_mode(complete_command)} "
+def incomplete_command(complete_command):
+    return f"You can Try: {complete_command} \n {ai_mode(complete_command)} "
 
 
 def open_apps(app_name):
