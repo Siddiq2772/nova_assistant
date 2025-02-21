@@ -3,6 +3,7 @@ import time,re,datetime
 from PyQt5.QtWidgets import QApplication, QWidget,QMenu, QVBoxLayout,QAction, QHBoxLayout,QStackedWidget, QLabel, QPushButton, QTextEdit,  QScrollArea, QFrame
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal,QPropertyAnimation,QEvent
 from PyQt5.QtGui import QIcon,QMovie,QPixmap
+from PyQt5 import QtGui
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
 import ctypes
@@ -96,9 +97,12 @@ class ChatWindow(QWidget,QThread):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("background-color: #0F1C25; border: none;")
+        self.message_history = []
+
 
         # Widget to hold the layout of chat bubbles
         self.chat_container = QWidget()
+        
         self.chat_layout = QVBoxLayout(self.chat_container)
         print(self.maximumWidth())
         self.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
@@ -171,7 +175,11 @@ class ChatWindow(QWidget,QThread):
         # print(bubble_widget.height())
         self.scroll_area.verticalScrollBar().setSliderPosition(self.scroll_area.verticalScrollBar().maximum()+(bubble_widget.height()*20))
     
-    
+    def get_last_message(self):
+        if self.message_history:
+            return self.message_history[-1]  # Return last message from history list
+        return ""
+
     
 
     
@@ -180,10 +188,15 @@ class ChatWindow(QWidget,QThread):
         # Create a QWidget to act as the message bubble
         bubble_frame = QFrame()
         bubble_layout = QHBoxLayout(bubble_frame)
-        if message.startswith("You:"): is_sent= True
+        if message.startswith("You:"): 
+            is_sent= True
+            self.message_history.append(message.replace("You:",""))
+
 
         
         bubble = QLabel(message)
+        bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
         bubble.setWordWrap(True)
         if not is_sent:
             bubble.setFixedWidth(int(self.scroll_area.width()*0.5))
@@ -237,6 +250,7 @@ class NovaInterface(QWidget):
         
         # demo(self)
         state = QLabel("Listening...")
+        self.chat_window.message_input.installEventFilter(self)
         
         
         state.setStyleSheet(f"""
@@ -244,6 +258,24 @@ class NovaInterface(QWidget):
                         font-size: 50px;
                         font-weight: bold;
                     """)
+    def changeEvent(self, event):
+        if event.type() == QEvent.WindowStateChange:
+            if self.isMinimized():
+                print("Window minimized")
+                self.show_popup()
+            elif self.isMaximized():
+                print("Window maximized")
+            else:
+                print("Window restored")
+
+        if event.type() == QEvent.ActivationChange:
+            if not self.isActiveWindow():
+                print("Window lost focus")
+                self.show_popup()
+            else:
+                print("Window gained focus")
+
+        super().changeEvent(event)
     def initUI(self):
         self.setWindowTitle('NOVA')
         self.setStyleSheet("background-color: #0F1C25; color: #ffffff;")
@@ -401,6 +433,7 @@ class NovaInterface(QWidget):
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.stacked_widget)
         self.setLayout(main_layout)
+    
 
 
     
@@ -504,17 +537,26 @@ class NovaInterface(QWidget):
         
     
     def eventFilter(self, obj, event):
-        if obj == self.message_input and event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key_Return:
-                if not event.modifiers():  # Only Enter
-                    if not self.toggleMic:
-                        self.send_message()
-                    return True  # Handled
-                elif event.modifiers() == Qt.ShiftModifier:  # Shift + Enter
-                    return False  # NOT handled (let QTextEdit do its job)
-                else:
-                  return False
+        if obj == self.chat_window.message_input and event.type() == event.KeyPress:
+            if event.key() == Qt.Key_Return and not event.modifiers():
+                # Only send the message if it's plain "Enter" key
+                if not toggleMic:
+                    self.chat_window.send_message()
+                return True
+            elif event.key() == Qt.Key_Return and event.modifiers() == Qt.ShiftModifier:
+                # Allow line breaks with Shift + Enter
+                self.chat_window.message_input.insertPlainText("\n")
+                return True
+            elif event.key() == Qt.Key_Up:  # Handle Up Arrow Key
+                # Retrieve the last message from history (assuming self.last_message stores it)
+                last_message = self.chat_window.get_last_message()  # Implement this method
+                if last_message:
+                    self.chat_window.message_input.setPlainText(last_message)
+                    self.chat_window.message_input.moveCursor(QtGui.QTextCursor.End)  # Move cursor to end
+                return True  # Stop further processing of the event
+
         return super().eventFilter(obj, event)
+
 
 
     
@@ -603,6 +645,19 @@ class NovaInterface(QWidget):
     def show_user_menu(self):
         # Show the menu below the SK label
         self.user_menu.exec_(self.sk_label.mapToGlobal(self.sk_label.rect().bottomLeft()))
+    def send_message(self,message):
+        speak("Please provide the phone number to which I should send messages.")
+        number = CustomInputBox.show_input_dialog("Please provide the phone number to which I should send messages")
+        while (len(number)<=9):
+            number = CustomInputBox.show_input_dialog(f"The provided phone number have only {len(number)} digits Please Enter again")
+
+        speak("This process may take a few seconds")
+        now = datetime.now()
+        country_code="+91"
+        number=f"{country_code}{number}"
+        threading.Thread(target=kit.sendwhatmsg, args=(number, message, now.hour, now.minute+1,1)).start()
+        self.chat_window.add_message("Message sent to "+number+"\nwill be delivered in a minute")
+        time.sleep(1)
 
     
 #     result = CustomMessageBox.show_message(self,"Welcome to NOVA\n\nNOVA is an AI assistant which can control your desktop based on your command.")
@@ -618,18 +673,8 @@ class ChatThread(QThread):
     sleep = pyqtSignal()
     state = pyqtSignal(str)
     name = pyqtSignal(str)
-    def send_message(self,message):
-        speak("Please provide the phone number to which I should send messages.")
-        number = CustomInputBox.show_input_dialog("Please provide the phone number to which I should send messages")
-        while (len(number)<=9):
-            number = CustomInputBox.show_input_dialog(f"The provided phone number have only {len(number)} digits Please Enter again")
-
-        speak("This process may take a few seconds")
-        now = datetime.now()
-        country_code="+91"
-        number=f"{country_code}{number}"
-        threading.Thread(target=kit.sendwhatmsg, args=(number, message, now.hour, now.minute+1,1)).start()
-        time.sleep(1)
+    send_message = pyqtSignal(str)
+    
 
     def __init__(self,obj):
         super().__init__()
@@ -653,7 +698,7 @@ class ChatThread(QThread):
                 # Decrypt the data
                     user_input = db.decrypt_data(encrypted_user_input.encode('utf-8')) if isinstance(encrypted_user_input, str) else db.decrypt_data(encrypted_user_input)
                     assistant_response = db.decrypt_data(encrypted_assistant_response.encode('utf-8')) if isinstance(encrypted_assistant_response, str) else db.decrypt_data(encrypted_assistant_response)
-                    self.message_received.emit("You:"+user_input)
+                    self.message_received.emit(user_input)
                     self.message_received.emit(assistant_response)
                 except Exception as decryption_error:
                     print(f"Decryption error for conversation ID {conv.id}: {decryption_error}")
@@ -701,8 +746,8 @@ class ChatThread(QThread):
                 result = "sleeping your computer"
 
             if result.__contains__("sending  message"): 
-                self.send_message(result.replace("sending  message","",1))
-                result += " with in one minute..."
+                self.send_message.emit(result.replace("sending  message","",1))
+                
 
 
 
@@ -710,7 +755,7 @@ class ChatThread(QThread):
                 # result = "message send" 
 
             
-            db.save_conversation(query,result)
+            db.save_conversation("You: "+ query,result)
             for r in result.split("\n"):
                 self.message_received.emit(r)
                 time.sleep(0.05)
@@ -765,6 +810,7 @@ if __name__ == '__main__':
         chat_thread.sleep.connect(ex.sleep_)
         chat_thread.state.connect(ex.state_)
         chat_thread.name.connect(ex.set_name)
+        chat_thread.send_message.connect(ex.send_message)
         chat_thread.start()
         sys.exit(app.exec_())
     except Exception as e:
