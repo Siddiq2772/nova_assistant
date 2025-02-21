@@ -1,7 +1,7 @@
 import sys,os,threading
 import time,re,datetime
 from PyQt5.QtWidgets import QApplication, QWidget,QMenu, QVBoxLayout,QAction, QHBoxLayout,QStackedWidget, QLabel, QPushButton, QTextEdit,  QScrollArea, QFrame
-from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal,QPropertyAnimation
+from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal,QPropertyAnimation,QEvent
 from PyQt5.QtGui import QIcon,QMovie,QPixmap
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
@@ -128,7 +128,6 @@ class ChatWindow(QWidget,QThread):
     
         layout.addLayout(self.input_layout)
         self.setLayout(layout)
-
         # Styling
         self.setStyleSheet("""
             QTextEdit {
@@ -268,18 +267,23 @@ class NovaInterface(QWidget):
         self.user_menu.setStyleSheet("""
             QMenu {
                 background-color: #07151E;
-                border: 2px solid red;    /* Changed border color to red */
+                border: 2px solid #0085FF;    /* Changed border color to red */
                 border-radius: 5px;
             }
             QMenu::item {
                 padding: 10px 30px;      /* Reduced padding to make button smaller */
-                color: red;              /* Text color red */
+                color: white;              /* Text color red */
                 font-size: 16px;         /* Slightly smaller font */
                 font-weight: bold;
             }
             QMenu::item:selected {
-                background-color: red;    /* Changed hover background to red */
+                background-color:  #0085FF;    /* Changed hover background to red */
                 color: white;
+            }
+            QMenu::separator {
+                height: 2px;
+                background-color: #0085FF;
+                margin: 5px 15px;
             }
         """)
 
@@ -287,6 +291,13 @@ class NovaInterface(QWidget):
         logout_action = QAction('Logout', self)
         logout_action.triggered.connect(self.logout)
         self.user_menu.addAction(logout_action)
+
+        separator = self.user_menu.addSeparator()
+        separator.setObjectName("blueMenuSeparator")
+
+        delete_action = QAction('Delete', self)
+        delete_action.triggered.connect(self.delete_account)
+        self.user_menu.addAction(delete_action)
 
         # NOVA label (centered)
         self.nova_icon = QLabel()
@@ -408,6 +419,24 @@ class NovaInterface(QWidget):
         
         except Exception as e:
             print(f"Error during logout: {e}")
+
+
+    def delete_account(self):
+        try:
+            result = CustomMessageBox.show_message(text="Are you sure you want to delete your account?", B1="Yes", B2="No")
+        
+            if result == 1:  # User clicked Yes
+                db.delete_account() 
+                if os.path.exists('user_config.txt'):
+                    os.remove('user_config.txt')
+                
+                self.close()
+                python_executable = sys.executable
+                os.execl(python_executable, python_executable, "signup_login.py")
+        
+        except Exception as e:
+            print(f"Error during account deletion: {e}")
+
     def show_popup(self):
         self.is_popup_mode = True
         self.stacked_widget.setCurrentWidget(self.popup_widget)
@@ -475,17 +504,18 @@ class NovaInterface(QWidget):
         
     
     def eventFilter(self, obj, event):
-        if obj == self.chat_window.message_input and event.type() == event.KeyPress:
-            if event.key() == Qt.Key_Return and not event.modifiers():
-                # Only send the message if it's plain "Enter" key
-                if not toggleMic:
-                    self.chat_window.send_message()
-                return True
-            elif event.key() == Qt.Key_Return and event.modifiers() == Qt.ShiftModifier:
-                # Allow line breaks with Shift + Enter
-                self.chat_window.message_input.insertPlainText("\n")
-                return True
+        if obj == self.message_input and event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Return:
+                if not event.modifiers():  # Only Enter
+                    if not self.toggleMic:
+                        self.send_message()
+                    return True  # Handled
+                elif event.modifiers() == Qt.ShiftModifier:  # Shift + Enter
+                    return False  # NOT handled (let QTextEdit do its job)
+                else:
+                  return False
         return super().eventFilter(obj, event)
+
 
     
     def state_(self,text):
@@ -513,12 +543,14 @@ class NovaInterface(QWidget):
         print("b.mic_off:"+ str(b.mic_off))
 
     def toggle_mute(self):
-        
+        global speaking
 
         # Get the current mute state
-        is_muted = volume.GetMute()
-        volume.SetMute(not is_muted, None)
-        if is_muted:
+        # is_muted = volume.GetMute()
+        # volume.SetMute(not is_muted, None)
+        speaking = not speaking
+
+        if speaking:
             self.mute_button.setIcon(QIcon('icons/mute.png'))
             self.popup.mute_button.setIcon(QIcon('icons/mute.png'))
 
@@ -527,7 +559,7 @@ class NovaInterface(QWidget):
             self.popup.mute_button.setIcon(QIcon('icons/unmute.png'))
             
         # Toggle the mute state
-        print(f"Muted: {not is_muted}")
+        print(f"Muted: {not speaking}")
 
     # Toggle mute/unmute
     def sleep_(self):
@@ -606,6 +638,7 @@ class ChatThread(QThread):
      global prompt
      global ret
      global thread
+     global speaking
      thread = True
      try:
         self.name.emit(db.get_user_initials())
@@ -690,7 +723,7 @@ class ChatThread(QThread):
             for rt in re.split(delimiters, result):  # Split by multiple delimiters
                 rt = rt.strip()  # Remove leading/trailing spaces
                 if rt:  # Ignore empty strings from splitting
-                    if not b.mic_off:
+                    if (not b.mic_off ) or not speaking:
                         self.micon.emit()
                         print("mic off")
                         break
@@ -708,7 +741,8 @@ class ChatThread(QThread):
             if toggleMic:
                 self.micon.emit()
             time.sleep(1)
-            speak("Sir, Do you have any other work")
+            if toggleMic:
+                speak("Sir, Do you have any other work")
           
      except Exception as e:
             print(e)
