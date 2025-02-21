@@ -1,6 +1,6 @@
 import sys,os,threading
-import time,re
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout,QStackedWidget, QLabel, QPushButton, QTextEdit,  QScrollArea, QFrame
+import time,re,datetime
+from PyQt5.QtWidgets import QApplication, QWidget,QMenu, QVBoxLayout,QAction, QHBoxLayout,QStackedWidget, QLabel, QPushButton, QTextEdit,  QScrollArea, QFrame
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal,QPropertyAnimation
 from PyQt5.QtGui import QIcon,QMovie,QPixmap
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -13,6 +13,7 @@ import database as db
 BtnTextFont = '25px'
 toggleMic = True
 themeColor = '#0085FF'
+speaking = True
 prompt = "none"
 thread = True
 btnStyle = f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:30px; border:5px solid {themeColor}"
@@ -205,6 +206,18 @@ class ChatWindow(QWidget,QThread):
 
         bubble_layout.setContentsMargins(10, 5, 10, 5)
         return bubble_frame
+    def delete_conversation(self):
+        # Delete all widgets inside the chat_layout
+        db.delete_conversation()
+        while self.chat_layout.count():
+            item = self.chat_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()  # Safe deletion
+
+        # Optionally, force a UI update
+        self.chat_container.update()
+
 
 
 # NovaInterface with chat integration
@@ -222,9 +235,7 @@ class NovaInterface(QWidget):
         super().__init__()
         self.chat_window = ChatWindow()
         self.initUI()
-        volume.SetMute(False, None)
-        self.chat_window.message_input.installEventFilter(self)
-        self.is_popup_mode = False
+        
         # demo(self)
         state = QLabel("Listening...")
         
@@ -247,28 +258,54 @@ class NovaInterface(QWidget):
         top_layout = QHBoxLayout()
 
         # SK logo (top-left corner)
-        self.sk_label = QLabel("U")
+        self.sk_label = QPushButton("U")
         self.sk_label.setStyleSheet(f"background-color: #07151E; color: {themeColor}; font-size:{BtnTextFont};  padding: 5px; border-radius: 20px; border:5px solid {themeColor};")
         self.sk_label.setFixedSize(50, 50)
-        self.sk_label.setAlignment(Qt.AlignCenter)
+        self.sk_label.clicked.connect(self.show_user_menu)
+
+        # Create menu
+        self.user_menu = QMenu(self)
+        self.user_menu.setStyleSheet("""
+            QMenu {
+                background-color: #07151E;
+                border: 2px solid red;    /* Changed border color to red */
+                border-radius: 5px;
+            }
+            QMenu::item {
+                padding: 10px 30px;      /* Reduced padding to make button smaller */
+                color: red;              /* Text color red */
+                font-size: 16px;         /* Slightly smaller font */
+                font-weight: bold;
+            }
+            QMenu::item:selected {
+                background-color: red;    /* Changed hover background to red */
+                color: white;
+            }
+        """)
+
+        # Add logout action
+        logout_action = QAction('Logout', self)
+        logout_action.triggered.connect(self.logout)
+        self.user_menu.addAction(logout_action)
 
         # NOVA label (centered)
         self.nova_icon = QLabel()
         img = QPixmap('icons/nova_no_bg.png')
         self.nova_icon.setPixmap(img)
         self.nova_icon.setStyleSheet("background-color: white; border-radius: 30px; padding: 5px;")
-        # nova_label = QLabel("NOVA")
+        nova_label = QLabel("NOVA")
         
-        # nova_label.setStyleSheet(f"color: {themeColor}; font-size: 30px; font-weight: bold;")
+        nova_label.setStyleSheet(f"color: {themeColor}; font-size: 30px; font-weight: bold;")
 
         delete_button = QPushButton()
         delete_button.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         delete_button.setIcon(QIcon('icons/delete.png'))
         delete_button.setIconSize(QSize(30, 30))
+        delete_button.clicked.connect(self.chat_window.delete_conversation)
 
         # Add widgets to the top layout
         top_layout.addWidget(self.nova_icon)
-        # top_layout.addWidget(nova_label)
+        top_layout.addWidget(nova_label)
         top_layout.addStretch()
         top_layout.addStretch()
         top_layout.addWidget(delete_button)
@@ -354,6 +391,23 @@ class NovaInterface(QWidget):
         main_layout.addWidget(self.stacked_widget)
         self.setLayout(main_layout)
 
+
+    
+    def logout(self):
+        try:
+            # Delete the user_config.txt file
+            if os.path.exists('user_config.txt'):
+                os.remove('user_config.txt')
+            
+            # Close the current window
+            self.close()
+            
+            # Start the signup_login.py script
+            python_executable = sys.executable
+            os.execl(python_executable, python_executable, "signup_login.py")
+        
+        except Exception as e:
+            print(f"Error during logout: {e}")
     def show_popup(self):
         self.is_popup_mode = True
         self.stacked_widget.setCurrentWidget(self.popup_widget)
@@ -514,9 +568,13 @@ class NovaInterface(QWidget):
             ret= f"Something Went wrong {e}"
         self.chat_window.add_message(ret)
         speak(ret)
+    def show_user_menu(self):
+        # Show the menu below the SK label
+        self.user_menu.exec_(self.sk_label.mapToGlobal(self.sk_label.rect().bottomLeft()))
 
     
 #     result = CustomMessageBox.show_message(self,"Welcome to NOVA\n\nNOVA is an AI assistant which can control your desktop based on your command.")
+    
 
 
 
@@ -529,20 +587,17 @@ class ChatThread(QThread):
     state = pyqtSignal(str)
     name = pyqtSignal(str)
     def send_message(self,message):
-                speak("Please provide the phone number to which I should send messages.")
-                number = CustomInputBox.show_input_dialog("Please provide the phone number to which I should send messages")
-                while (len(number)<=9):
-                    number = CustomInputBox.show_input_dialog(f"The provided phone number have only {len(number)} digits Please Enter again")
-        
-                
-                speak("This process may take a few seconds")
-                now = datetime.datetime.now()
-                
+        speak("Please provide the phone number to which I should send messages.")
+        number = CustomInputBox.show_input_dialog("Please provide the phone number to which I should send messages")
+        while (len(number)<=9):
+            number = CustomInputBox.show_input_dialog(f"The provided phone number have only {len(number)} digits Please Enter again")
 
-                country_code="+91"
-                number=f"{country_code}{number}"
-                threading.Thread(target=kit.sendwhatmsg, args=(number, message, now.hour, now.minute+1,1)).start()
-                time.sleep(1)
+        speak("This process may take a few seconds")
+        now = datetime.now()
+        country_code="+91"
+        number=f"{country_code}{number}"
+        threading.Thread(target=kit.sendwhatmsg, args=(number, message, now.hour, now.minute+1,1)).start()
+        time.sleep(1)
 
     def __init__(self,obj):
         super().__init__()
