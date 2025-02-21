@@ -256,21 +256,22 @@ class NovaInterface(QWidget):
         self.nova_icon = QLabel()
         img = QPixmap('icons/nova_no_bg.png')
         self.nova_icon.setPixmap(img)
-        nova_label = QLabel("NOVA")
+        self.nova_icon.setStyleSheet("background-color: white; border-radius: 30px; padding: 5px;")
+        # nova_label = QLabel("NOVA")
         
-        nova_label.setStyleSheet(f"color: {themeColor}; font-size: 30px; font-weight: bold;")
+        # nova_label.setStyleSheet(f"color: {themeColor}; font-size: 30px; font-weight: bold;")
 
-        history_button = QPushButton('Show Chat History')
-        history_button.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
-        history_button.setIcon(QIcon('icons/menu.png'))
-        history_button.setIconSize(QSize(30, 30))
+        delete_button = QPushButton()
+        delete_button.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
+        delete_button.setIcon(QIcon('icons/delete.png'))
+        delete_button.setIconSize(QSize(30, 30))
 
         # Add widgets to the top layout
         top_layout.addWidget(self.nova_icon)
-        top_layout.addWidget(nova_label)
+        # top_layout.addWidget(nova_label)
         top_layout.addStretch()
-        top_layout.addWidget(history_button)
         top_layout.addStretch()
+        top_layout.addWidget(delete_button)
         top_layout.addWidget(self.sk_label)  
 
 
@@ -283,7 +284,7 @@ class NovaInterface(QWidget):
         # Bottom but.bottom_layout
         self.bottom_layout = QHBoxLayout()
         
-        # history_button.setBackgroundRole(Qt.black)
+        # delete_button.setBackgroundRole(Qt.black)
 
         self.text_mode_button = QPushButton()
         self.text_mode_button.setStyleSheet(btnStyle)

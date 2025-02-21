@@ -10,6 +10,7 @@ import aiprocess as ap
 import AppOpener
 import gemini_ai
 import time
+import pyautogui
 import io
 from database import get_username
 import sys
@@ -22,7 +23,7 @@ obj=None
 msg = None
 engine = pyttsx3.init("sapi5")
 commands = ["open", "shutdown", "ip address of my device", "minimise window","close window","maximise window","go to","search on google","search on wikipedia",
-            "current temperature","send message","ai mode","sleep","current date","restart","play video on youtube","help","close","send message","battery","current time","Incomplete","mute","unmute","exit","user"]
+            "current temperature","send message","ai mode","sleep","current date","restart","play video on youtube","help","close","send message","battery","current time","Incomplete","mute","unmute","exit","user","type"]
 # Text to speak function
 def set_speech_rate(rate):
     engine.setProperty('rate', rate)
@@ -41,49 +42,26 @@ def speak(text,speed=200):
 
 
 # Voice to text
-def takecmd(mic_off=False):  # Added mic_off parameter with default value
+def takecmd():
     r = sr.Recognizer()
-
     with sr.Microphone() as source:
         print("Listening...")
-
-        if mic_off:
-            return None  # Return None if mic is off
-
+        if mic_off: return 
         r.pause_threshold = 1
-        r.non_speaking_duration = 0.5  # Adjust for better phrase detection
-        r.phrase_threshold = 0.3 # Adjust for better phrase detection
-
-        if mic_off:
-            return None
-
+        if mic_off: return 
         try:
-            print("Calibrating microphone...") # Calibrate before listening
-            r.adjust_for_ambient_noise(source, duration=1)  # Calibrate for ambient noise
-
-            print("Start speaking...")
-            audio = r.listen(source, timeout=10, phrase_time_limit=10) # Increased timeout
-
-            if mic_off:
-                return None
-
-            
-            return audio  # Convert to lowercase for consistency
-
+            audio = r.listen(source, timeout=5, phrase_time_limit=5)  # Increased timeout
+            if mic_off: return 
         except sr.WaitTimeoutError:
-            print("Listening timed out. Please try again.") # Print to console for debugging
-            return None # Return None on timeout
-
+            speak("Listening timed out. Please try again.")
+            return 
         except sr.UnknownValueError:
-            print("Sorry, I did not understand that.") # Print to console for debugging
-            return None
-
-        except sr.RequestError as e:
-            print(f"Sorry, there was an issue with the request: {e}") # Print to console for debugging
-            return None
-        except Exception as e: # Catch any other exceptions
-            print(f"An unexpected error occurred: {e}")
-            return None
+            speak("Sorry, I did not understand that.")
+            return 
+        except sr.RequestError:
+            speak("Sorry, there was an issue with the request.")
+            return 
+        return audio
     
 def recoginze(audio):
     print("Recognizing...")
@@ -165,8 +143,7 @@ def send_message(message):
     return f"sending  message {message}"
 
 def incomplete_command(complete_command):
-    return f"You can Try: {complete_command} \n {ai_mode(complete_command)} "
-
+    return f"The command you provide is incomplete command, the complete {complete_command}"
 
 def open_apps(app_name):
     # pass
@@ -230,74 +207,74 @@ def battery():
 
 def help_function():
     help_text = (
-        "Welcome to the Command Assistant!, My name is Nova, Here are some commands you can use: \n \n" +
-        "1. **Go to <website name>**\n"+
-        "   - Example: 'Go to amazon' or 'Go to google'\n"+
-        "   - Opens the website in your browser. The assistant will append '.com' to the website name if not specified. \n \n"
+        "Welcome to the Command Assistant!, My name is Nova, Here are some commands you can use:\n\n"
+        "1. **Go to <website name>**\n"
+        "   - Example: 'Go to amazon' or 'Go to google'\n"
+        "   - Opens the website in your browser. The assistant will append '.com' to the website name if not specified.\n\n"
         
         "2. **Search on Google <query>**\n"
         "   - Example: 'Search on Google Python tutorials'\n"
-        "   - Performs a Google search with the specified query. \n \n"
+        "   - Performs a Google search with the specified query.\n\n"
         
         "3. **Open <app/system tool>**\n"
         "   - Example: 'Open calculator' or 'Open notepad'\n"
-        "   - Opens the specified application or system tool. \n \n"
+        "   - Opens the specified application or system tool.\n\n"
         
         "4. **IP address of my device**\n"
         "   - Example: 'IP address of my device'\n"
-        "   - Provides the IP address of your device. \n \n"
+        "   - Provides the IP address of your device.\n\n"
         
         "5. **Search on Wikipedia <topic>**\n"
         "   - Example: 'Search on Wikipedia Python programming'\n"
-        "   - Searches Wikipedia for the specified topic and reads a summary. \n \n"
+        "   - Searches Wikipedia for the specified topic and reads a summary.\n\n"
         
         "6. **Send message**\n"
         "   - Example: 'Send message'\n"
-        "   - Prompts you to provide a phone number and a message to send via WhatsApp. \n \n"
+        "   - Prompts you to provide a phone number and a message to send via WhatsApp.\n\n"
         
         "7. **Current temperature <city_name>**\n"
         "   - Example: 'Current temperature in New York'\n"
-        "   - Provides the current temperature for the specified city. \n \n"
+        "   - Provides the current temperature for the specified city.\n\n"
         
         "8. **Play video on YouTube <video_name>**\n"
         "   - Example: 'Play video on YouTube Python tutorial'\n"
-        "   - Searches for and plays the specified video on YouTube. \n \n"
+        "   - Searches for and plays the specified video on YouTube.\n\n"
         
         "9. **Current time**\n"
         "   - Example: 'Current time'\n"
-        "   - Provides the current time. \n \n"
+        "   - Provides the current time.\n\n"
         
         "10. **AI mode <query>**\n"
         "    - Example: 'AI mode What is the weather like?'\n"
-        "    - Interacts with the AI model to process your query in AI mode. \n \n"
+        "    - Interacts with the AI model to process your query in AI mode.\n\n"
         
         "11. **Shutdown**\n"
         "    - Example: 'Shutdown'\n"
-        "    - Shuts down the computer. \n \n"
+        "    - Shuts down the computer.\n\n"
         
         "12. **Restart**\n"
         "    - Example: 'Restart'\n"
-        "    - Restarts the computer. \n \n"
+        "    - Restarts the computer.\n\n"
         
         "13. **Sleep**\n"
         "    - Example: 'Sleep'\n"
-        "    - Puts the computer into sleep mode. \n \n"
+        "    - Puts the computer into sleep mode.\n\n"
         
         "14. **Minimise window**\n"
         "    - Example: 'Minimise window'\n"
-        "    - Minimizes the currently active window. \n \n"
+        "    - Minimizes the currently active window.\n\n"
         
         "15. **Maximise window**\n"
         "    - Example: 'Maximise window'\n"
-        "    - Maximizes the currently active window. \n \n"
+        "    - Maximises the currently active window.\n\n"
         
         "16. **Close window**\n"
         "    - Example: 'Close window'\n"
-        "    - Closes the currently active window. \n \n"
+        "    - Closes the currently active window.\n\n"
         
         "17. **No thanks exit**\n"
         "    - Example: 'No thanks exit'\n"
-        "    - Exits the assistant. \n \n"
+        "    - Exits the assistant.\n\n"
         
         "If you need help with a specific command or have any questions, just ask!"
     )
@@ -344,6 +321,7 @@ def maximize():
         window = gw.getActiveWindow()
         if window:
             window.maximize()
+            print("success")
             return "Current Window is Maximized"
         else:
             return "Current window can't recognize"
@@ -381,7 +359,7 @@ def close_apps(app_name):
     try:
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        # AppOpener.close(app_name)
+        AppOpener.close(app_name)
         sys.stdout = sys.__stdout__
         result = captured_output.getvalue().strip()        
         if "not running" in result:
@@ -416,7 +394,13 @@ def exit_fucntion():
     
 # def query_fucn(answer):
 #     return answer
+
+def write_anything(text):
     
+    # Type the modified text
+    pyautogui.write(text, interval=0.1)
+    return "Your text is successfully written"
+
     
 def current_date():
     date=date=datetime.datetime.now().strftime("%B %d, %Y")
@@ -430,7 +414,7 @@ command_actions={
     "search on wikipedia":wiki,
     "sleep":sleep,
     "minimise window":minimize,
-    "maximize":maximize,
+    "maximise window":maximize,
     "close window":closewindow,
     "go to":open_website,
     "search on google":google_search,
@@ -449,9 +433,11 @@ command_actions={
     "help":help_function,
     "close":close_apps,
     "user":user_name,
-    # "Incomplete":incomplete_command,
+    "type":write_anything,
+    "Incomplete":incomplete_command,
     "exit":exit_fucntion
 }
+
 
 def input_from_gui(user_input,self):
     global obj

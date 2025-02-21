@@ -3,9 +3,10 @@ from google.generativeai.types.generation_types import StopCandidateException
 import json
 import AppOpener
 from config import API_KEY
+import database
+# from main1 as 
 
-# Store previous conversation context
-conversation_history = []  # This will store past user commands and AI responses
+
 
 # List of predefined commands
 commands_list = [
@@ -32,38 +33,38 @@ commands_list = [
     "minimise window",
     "maximise window",
     "close window",
+    "type <text>",
     "help",
     "exit"
 ]
 
 # Configure the API once globally to avoid redundant setup
+
 def scanapp():
-    app_keys = AppOpener.give_appnames()
+    # pass
+    app_keys=AppOpener.give_appnames()
     return app_keys
 
 def processcmd(command):
     ai.configure(api_key=API_KEY)
 
-    # Create a new model and chat object once
+# Create a new model and chat object once
     model = ai.GenerativeModel("gemini-2.0-flash")
     chat = model.start_chat()
-    app_keys = scanapp()
+    app_keys=scanapp()
+    
 
     with open('task.json', 'r') as file:
         task_data = json.load(file)
 
-    # Convert the JSON data to a formatted string
+# Convert the JSON data to a formatted string
     json_data_str = json.dumps(task_data, indent=2)
 
-    # Keep only the last 5 messages to avoid excessive memory usage
-    if len(conversation_history) > 5:
-        conversation_history.pop(0)  # Remove the oldest message to maintain context limit
-
-    # Construct the prompt with past context
-    history_str = "\n".join(conversation_history)
+    previous_chats=database.get_last_five_conversations()
     
+    # Refined prompt that asks the AI to match input with the correct command from the list
     prompt = (
-        f"Your name is NOVA, You are a command assistant designed to help users, including those who may be illiterate or make mistakes in their input. "
+    f"Your name is NOVA, You are a command assistant designed to help users, including those who may be illiterate or make mistakes in their input. "
     f"Your task is to interpret the user's intent and correct any spelling mistakes, command structure errors, or word choice issues. "
     f"Consider the following possibilities for mistakes:\n"
     f"- The user might confuse 'go to' for websites and apps. If they say 'go to' followed by a website name, change it to 'go to <website>.com' if not specified. For apps, return 'open <app>' or 'close <app>' as needed, but only if the app name exists in the user's installed apps, which are listed in {app_keys}.\n"
@@ -78,34 +79,34 @@ def processcmd(command):
     f"- If the user gives an incomplete command, such as 'open app' without specifying the app, respond with 'Incomplete command: open <app_name>'. This will guide the user towards the correct format.\n"
     f"- If the user says anything resembling 'help', such as 'run help function', 'show help', 'assist', or 'guide', return the 'help' command.\n"
     f"- If the user says anything resembling 'exit', 'no thanks', 'close', or any phrase indicating the intent to stop or exit the software, return 'exit'.\n"
-    f"- If the user asks a question related to any domain or field, interpret the question and provide a relevant answer in 200 words or more, returning it in the format: 'AI mode: <answer>'.\n\n"
+    f"- If the user asks a question related to any domain or field, interpret the question and provide a relevant answer, returning it in the format: 'AI mode: <answer>'.\n\n"
+    f"- If the user wants to type something, return 'type <text>'. For example, if the user says 'I want to type Hello coders', return 'type Hello coders'.\n\n"
     f"Commands List:\n"
     f"{commands_list}\n\n"
     f"Here is the app name mapping from the user's system (available apps):\n"
     f"{app_keys}\n\n"
     f"Task Data:\n"
     f"{json_data_str}\n\n"
+    f"Previous Chat History:\n"
+    f"{previous_chats}\n\n"
     f"User Input: {command}\n\n"
     f"Response:\n"
     f"- If the user wants to open a website and says something like 'go to <website_name>' or 'open <website_name>', return 'go to <website_name>.com'.\n"
     f"- For apps, return 'open <app_name>' or 'close <app_name>' if the app exists in {app_keys}, or inform the user that the app is not available if it's not in {app_keys}.\n"
     f"- If the command is incomplete, return 'Incomplete command: <correct_command>'.\n"
-    f"- If the user asks about themselves, return 'user'"
-        f"Previous Interactions:\n{history_str}\n\n"
-        f"User Input: {command}\n\n"
-        f"Response:\n"
-        f"- If the command is incomplete or not recognized, generate a response yourself and return it.\n"
-        f"- If the user refers to something from previous messages, use the context from past interactions.\n"
-        f"- Maintain a conversational flow and answer accordingly."
-    )
+    f"- If the user asks a question related to any domain or field, interpret the question and return 'AI mode: <answer>'."
+    f"- If the user asks about themselves, return 'user'\n"
+    f"- If the command is incomplete or not recognized, generate a response yourself and return it.\n"
+    f"- If the user refers to something from previous messages, use the context from past interactions in {previous_chats}.\n"
+    f"- Maintain a conversational flow and answer accordingly."
+)
+
+
 
     try:
         # Send the refined prompt to the AI
         response = chat.send_message(prompt)
         matched_command = response.text.strip()
-
-        # Store the AI response in the conversation history
-        conversation_history.append(f"{command}:{matched_command}")
 
         # Debug print the raw response from AI
         print(f"Raw AI Response: {matched_command}")
@@ -121,3 +122,6 @@ def processcmd(command):
         print("AI Error: Sorry, something went wrong.")
         print(f"Error: {e}")
         return "Command not recognized. Please try again."
+    
+# print(processcmd("what time is it"))
+# print(app_name)

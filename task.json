@@ -160,6 +160,14 @@
         {"user_input": "do you know me?", "assistant_output": "user"},
         {"user_input": "who am I?", "assistant_output": "user"}
       ]
+    },
+    {
+      "command": "type <text>",
+      "description": "Types the specified text.",
+      "examples": [
+        {"user_input": "I type to write Hello coders", "assistant_output": "type Hello coders"},
+        {"user_input": "type Hello World", "assistant_output": "type Hello World"}
+      ]
     }
   ]
 }
