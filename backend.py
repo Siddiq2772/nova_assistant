@@ -273,12 +273,17 @@ def help_function():
         "16. **Close window**\n"
         "    - Example: 'Close window'\n"
         "    - Closes the currently active window.\n\n"
+
+        "17. *type <text>*\n"
+        "     - Example: 'Type Hello, my name is Nova'\n"
+        "     - Automatically types the specified text as if you typed it manually..\n\n"
         
-        "17. **No thanks exit**\n"
+         "18. *No thanks exit*\n"
         "    - Example: 'No thanks exit'\n"
-        "    - Exits the assistant.\n\n"
+        "    - Exits the assistant.\n\n"
         
         "If you need help with a specific command or have any questions, just ask!"
+
     )
     return help_text
     
