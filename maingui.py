@@ -729,6 +729,9 @@ class ChatThread(QThread):
         while True:    
             if flag:
                 flag= False
+            if b.mic_off:
+                self.state.emit("Mic is off")
+                continue
             
             self.state.emit("Listening...")
 
@@ -803,7 +806,7 @@ class ChatThread(QThread):
             if toggleMic:
                 self.micon.emit()
             time.sleep(1)
-            if toggleMic:
+            if toggleMic and not b.mic_off:
                 speak("Sir, Do you have any other work")
           
      except Exception as e:
