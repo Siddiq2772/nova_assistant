@@ -1,5 +1,7 @@
 .venv
 venv
+__pycache__
+*.pyc
 tempCodeRunnerFile.py
 PyWhatKit_DB.txt
 tp.py
@@ -7,5 +9,4 @@ userlogin.png
 config.py
 main_window.py
 desktop-assistant-f315e-firebase-adminsdk-ilw8c-fb4eac3517.json
-_pycache_
 *.exe
