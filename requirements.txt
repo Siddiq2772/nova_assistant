@@ -12,5 +12,6 @@ pycaw
 firebase-admin
 pyrebase4
 PyQt5
-aixplain
-pycaw
+pyautogui
+FPDF
+python-docx
