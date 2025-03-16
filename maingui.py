@@ -11,8 +11,7 @@ from CustomMessageBox import *
 from backend import *
 import backend as b
 import database as db
-import markdown
-
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 BtnTextFont = '25px'
 toggleMic = True
 themeColor = '#0085FF'
@@ -82,16 +81,27 @@ class PopupWindow(QWidget):
         self.setLayout(layout)
 
     def show_main_window(self):
-        if not toggleMic:
+        if not toggleMic :
             self.main_window.toggle_input_mode()
         self.hide()
         self.main_window.show_main_interface()
 
-# Add this function to convert markdown to HTML
+
 def convert_markdown_to_html(text):
-    # Convert markdown to HTML using the markdown library
-    html = markdown.markdown(text, extensions=['extra', 'codehilite'])
+    # Convert markdown to HTML using the markdown library with additional extensions
+    extensions = [
+        'extra',        # Enables additional Markdown features like tables and footnotes
+        'codehilite',   # Adds syntax highlighting for code blocks
+        'toc',          # Generates a Table of Contents based on headings
+        'nl2br',        # Converts newlines to <br> for better text formatting
+        'sane_lists',   # Ensures consistent list formatting
+        'fenced_code',  # Enables triple-backtick code blocks
+        'admonition'    # Supports note/warning/info boxes
+    ]
+    
+    html = markdown.markdown(text, extensions=extensions)
     return html
+
 
 class ChatWindow(QWidget, QThread):
     def __init__(self):
@@ -106,12 +116,13 @@ class ChatWindow(QWidget, QThread):
         self.scroll_area.setStyleSheet("background-color: #0F1C25; border: none;")
         self.message_history = []
 
+        self.browser = QWebEngineView()
+
         # Widget to hold the layout of chat bubbles
         self.chat_container = QWidget()
         
         self.chat_layout = QVBoxLayout(self.chat_container)
         print(self.maximumWidth())
-        self.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
         self.chat_layout.setAlignment(Qt.AlignTop)
 
         self.scroll_area.setWidget(self.chat_container)
@@ -200,36 +211,340 @@ class ChatWindow(QWidget, QThread):
         if is_sent:
             # For user messages, just set the text
             bubble.setText(message)
+            bubble.setWordWrap(True)
+            bubble.setStyleSheet(f"""
+                 background-color: {themeColor if is_sent else '#0A1E2A'};
+                color: white;
+                border-radius: 10px;
+                padding: {"10px" if is_sent else "10px"};
+                font-size:{BtnTextFont};
+            """)
         else:
-            # For bot responses, convert markdown to HTML
+            # For bot responses with enhanced Bootstrap styling
             html_content = convert_markdown_to_html(message)
-            bubble.setTextFormat(Qt.RichText)  # Enable rich text
-            bubble.setText(html_content)
-        
-        bubble.setWordWrap(True)
-        if not is_sent:
-            bubble.setFixedWidth(int(self.scroll_area.width()*0.5))
-        
-        # Add CSS for styling markdown elements
-        bubble.setStyleSheet(f"""
-        background-color: {themeColor if is_sent else '#0A1E2A'};
-        color: white;
-        border-radius: 10px;
-        padding: {"10px" if is_sent else "10px"};
-        font-size:{BtnTextFont};
-        
-        /* Markdown styling */
-        h1, h2, h3, h4, h5, h6 {{ color: #FFFFFF; font-weight: bold; }}
-        h1 {{ font-size: 1.5em; }}
-        h2 {{ font-size: 1.3em; }}
-        h3 {{ font-size: 1.1em; }}
-        code {{ background-color: #1E3545; padding: 2px 4px; border-radius: 3px; font-family: monospace; }}
-        pre {{ background-color: #1E3545; padding: 10px; border-radius: 5px; font-family: monospace; overflow-x: auto; }}
-        a {{ color: #6CCAFF; text-decoration: underline; }}
-        blockquote {{ border-left: 3px solid #6CCAFF; padding-left: 10px; margin-left: 5px; font-style: italic; }}
-        ul, ol {{ padding-left: 20px; }}
-        """)  
+            bubble = QWebEngineView()
 
+            # Adjust bubble height based on content length
+            content_length = len(html_content)
+            if content_length < 50:
+                bubble.setFixedHeight(80)  # Small height for small content
+            elif content_length < 200:
+                bubble.setFixedHeight(130)  # Medium height
+            else:
+                bubble.setMaximumHeight(500)  # Allow expanding for larger content
+                bubble.setMinimumWidth(1000)
+            
+            # Add Bootstrap and custom styling
+            bootstrap_html = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                <style>
+                    body {{
+                        background-color: #07151E;
+                        color: #E8EAED;
+                        font-family: var(--bs-font-sans-serif);
+                        margin: 0;
+                        line-height: 1.6;
+                        font-size: 1.5rem;
+                    }}
+                    /* Webkit browsers (Chrome, Safari, newer Edge) */
+::-webkit-scrollbar {{
+    width: 8px;
+    height: 8px;
+}}
+
+::-webkit-scrollbar-track {{
+    background: rgba(7, 21, 30, 0.6);
+    border-radius: 10px;
+}}
+
+::-webkit-scrollbar-thumb {{
+    background: rgba(108, 202, 255, 0.5);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}}
+
+::-webkit-scrollbar-thumb:hover {{
+    background: rgba(108, 202, 255, 0.8);
+}}
+
+/* Firefox */
+* {{
+    scrollbar-width: thin;
+    scrollbar-color: rgba(108, 202, 255, 0.5) rgba(7, 21, 30, 0.6);
+}}
+
+/* For the pre element specifically, to ensure code blocks scroll nicely */
+pre {{
+    overflow-x: auto;
+    scrollbar-width: thin;
+}}
+                    
+                    .message-content {{
+                        background-color: rgba(13, 37, 53, 0.9);
+                        border-radius: 1rem;
+                        border: 1px solid rgba(108, 202, 255, 0.2);
+                        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+                        padding: 1.25rem;
+                        margin-bottom: 0.5rem;
+                    }}
+                    
+                    h1, h2, h3 {{ 
+                        color: #6CCAFF;
+                        font-weight: 500;
+                    }}
+                    
+                    h1 {{ font-size: 2.4rem; }}
+                    h2 {{ font-size: 2rem; }}
+                    h3 {{ font-size: 1.75rem; }}
+                    
+                    p {{ 
+                        font-size: 1.3rem;
+                        margin-bottom: 1rem;
+                    }}
+                    
+                    a {{
+                        color: #6CCAFF;
+                        text-decoration: none;
+                        transition: all 0.2s ease;
+                        font-size: 1.3rem;
+                    }}
+                    
+                    a:hover {{
+                        color: #9DDEFF;
+                        text-decoration: underline;
+                    }}
+                    
+                    /* Enhanced code styling */
+                    code {{
+                        color: #56D364;
+                        padding: 0.2rem 0.4rem;
+                        border-radius: 0.25rem;
+                        font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+                        font-size: 1.1rem;
+                        word-wrap: break-word;
+                        background-color: rgba(30, 53, 69, 0.4);
+                    }}
+                    
+                    /* Advanced code block styling */
+                    pre {{
+                        background-color: #1a2638;
+                        border-radius: 0.75rem;
+                        padding: 0;
+                        margin: 1.5rem 0;
+                        overflow: hidden;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                        border: 1px solid rgba(99, 179, 237, 0.2);
+                    }}
+                    
+                    pre .code-header {{
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        background-color: rgba(33, 45, 63, 0.9);
+                        padding: 0.5rem 1rem;
+                        border-bottom: 1px solid rgba(99, 179, 237, 0.2);
+                    }}
+                    
+                    pre .code-header .language-badge {{
+                        background-color: rgba(108, 202, 255, 0.2);
+                        border-radius: 0.25rem;
+                        padding: 0.2rem 0.5rem;
+                        font-size: 0.85rem;
+                        color: #6CCAFF;
+                    }}
+                    
+                    pre .code-container {{
+                        padding: 1rem;
+                        overflow-x: auto;
+                    }}
+                    
+                    pre code {{
+                        background-color: transparent;
+                        padding: 0;
+                        font-size: 1.1rem;
+                        white-space: pre;
+                        font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+                        line-height: 1.6;
+                    }}
+                    
+                    /* Syntax highlighting colors */
+                    .token.comment,
+                    .token.prolog,
+                    .token.doctype,
+                    .token.cdata {{
+                        color: #8a9199;
+                    }}
+                    
+                    .token.punctuation {{
+                        color: #e1e1e6;
+                    }}
+                    
+                    .token.property,
+                    .token.tag,
+                    .token.boolean,
+                    .token.number,
+                    .token.constant {{
+                        color: #FF79C6;
+                    }}
+                    
+                    .token.selector,
+                    .token.attr-name,
+                    .token.string,
+                    .token.char,
+                    .token.builtin {{
+                        color: #A9FF68;
+                    }}
+                    
+                    .token.operator,
+                    .token.entity,
+                    .token.url,
+                    .language-css .token.string,
+                    .style .token.string {{
+                        color: #67E8F9;
+                    }}
+                    
+                    .token.atrule,
+                    .token.attr-value,
+                    .token.keyword {{
+                        color: #F471B5;
+                    }}
+                    
+                    .token.function {{
+                        color: #FFD700;
+                    }}
+                    
+                    .token.regex,
+                    .token.important,
+                    .token.variable {{
+                        color: #F8BD96;
+                    }}
+                    
+                    .token.important,
+                    .token.bold {{
+                        font-weight: bold;
+                    }}
+                    
+                    .token.italic {{
+                        font-style: italic;
+                    }}
+                    
+                    ul, ol {{
+                        padding-left: 2rem;
+                        font-size: 1.3rem;
+                        margin-bottom: 1rem;
+                    }}
+                    
+                    li {{
+                        margin-bottom: 0.5rem;
+                    }}
+                    
+                    blockquote {{
+                        border-left: 0.25rem solid #6CCAFF;
+                        margin: 1rem 0;
+                        padding: 1rem;
+                        background-color: rgba(108, 202, 255, 0.1);
+                        border-radius: 0 0.5rem 0.5rem 0;
+                        font-size: 1.3rem;
+                    }}
+                    
+                    img {{
+                        max-width: 100%;
+                        height: auto;
+                        border-radius: 0.5rem;
+                        margin: 1rem 0;
+                        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+                    }}
+                    
+                    table {{
+                        width: 100%;
+                        margin-bottom: 1rem;
+                        vertical-align: top;
+                        border-color: #30404D;
+                    }}
+                    
+                    th, td {{
+                        padding: 0.75rem;
+                        border: 1px solid #30404D;
+                        font-size: 1.2rem;
+                        word-wrap: break-word;
+                    }}
+                    
+                    thead {{
+                        background-color: rgba(30, 53, 69, 0.8);
+                        color: #E8EAED;
+                    }}
+                    
+                    tbody tr:nth-of-type(odd) {{
+                        background-color: rgba(30, 53, 69, 0.3);
+                        word-wrap: break-word;
+                    }}
+                </style>
+                <script>
+                    // Function to add code header with language badge
+                    document.addEventListener('DOMContentLoaded', function() {{
+                        const codeBlocks = document.querySelectorAll('pre code');
+                        codeBlocks.forEach(function(codeBlock) {{
+                            const pre = codeBlock.parentNode;
+                            
+                            // Create code header
+                            const header = document.createElement('div');
+                            header.className = 'code-header';
+                            
+                            // Create language badge
+                            const langBadge = document.createElement('span');
+                            langBadge.className = 'language-badge';
+                            
+                            // Try to detect language from class
+                            let lang = 'code';
+                            if (codeBlock.className) {{
+                                const match = codeBlock.className.match(/language-([a-z0-9]+)/i);
+                                if (match) {{
+                                    lang = match[1];
+                                }}
+                            }}
+                            
+                            langBadge.textContent = lang;
+                            header.appendChild(langBadge);
+                            
+                            // Create code container
+                            const container = document.createElement('div');
+                            container.className = 'code-container';
+                            
+                            // Move code into container
+                            const codeContent = codeBlock.cloneNode(true);
+                            container.appendChild(codeContent);
+                            
+                            // Clear pre and add new structure
+                            pre.innerHTML = '';
+                            pre.appendChild(header);
+                            pre.appendChild(container);
+                        }});
+                    }});
+                </script>
+            </head>
+            <body>
+                <div class="message-content">
+                    {html_content}
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                <!-- Add PrismJS for syntax highlighting -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+            </body>
+            </html>
+            """
+            bubble.setHtml(bootstrap_html)
+            bubble.setStyleSheet("""
+                background: #07151E;
+                border: none;
+            """)
+        
+        # Align messages appropriately
         if is_sent:
             bubble_layout.addStretch()  # Right-align sent messages
             bubble_layout.addWidget(bubble)
@@ -237,9 +552,7 @@ class ChatWindow(QWidget, QThread):
             bubble_layout.addWidget(bubble)  # Left-align received messages
             bubble_layout.addStretch()
 
-        bubble_layout.setContentsMargins(10, 5, 10, 5)
         return bubble_frame
-    
     def delete_conversation(self):
         # Delete all widgets inside the chat_layout
         db.delete_conversation()
@@ -251,7 +564,6 @@ class ChatWindow(QWidget, QThread):
 
         # Optionally, force a UI update
         self.chat_container.update()
-
 # NovaInterface with chat integration
 class NovaInterface(QWidget):
     def __init__(self):
@@ -267,6 +579,7 @@ class NovaInterface(QWidget):
                     """)
         super().__init__()
         self.chat_window = ChatWindow()
+        self.is_popup_mode = False
         self.initUI()
         
         # demo(self)
@@ -285,8 +598,12 @@ class NovaInterface(QWidget):
                 print("Window minimized")
                 self.show_popup()
             elif self.isMaximized():
+                self.chat_window.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
+
                 print("Window maximized")
             else:
+                self.setBaseSize(1000, 1000)
+                self.chat_window.chat_layout.setContentsMargins(0,0,0,0)
                 print("Window restored")
 
         if event.type() == QEvent.ActivationChange:
@@ -365,7 +682,9 @@ class NovaInterface(QWidget):
         delete_button.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
         delete_button.setIcon(QIcon('icons/delete.png'))
         delete_button.setIconSize(QSize(30, 30))
-        delete_button.clicked.connect(self.chat_window.delete_conversation)
+        delete_button.clicked.connect(self.delete_conversation)
+
+        
 
         # Add widgets to the top layout
         top_layout.addWidget(self.nova_icon)
@@ -452,7 +771,9 @@ class NovaInterface(QWidget):
         self.setLayout(main_layout)
     
 
-
+    def delete_conversation(self):
+            threading.Thread(target=self.chat_window.delete_conversation).start()
+            speak("Conversation deleted")
     
     def logout(self):
         try:
@@ -508,6 +829,8 @@ class NovaInterface(QWidget):
             self.mic_button.show()
             self.text_mode_button.setIcon(QIcon('icons/keyboard.png'))
             toggleMic = True
+            if not self.is_popup_mode:
+                b.mic_off = False
 
         else:  #show keyboard
             self.chat_window.message_input.show()
@@ -545,6 +868,7 @@ class NovaInterface(QWidget):
             movie.stop()
             movie.jumpToFrame(0)
         self.hide()
+        self.is_popup_mode = True
         self.popup.show()
     
     def set_name(self,text):
@@ -789,7 +1113,6 @@ class ChatThread(QThread):
 
             
             self.message_received.emit(result)
-            self.message_received.emit("\n")
                 
             self.state.emit("Speaking...")
             

@@ -9,6 +9,7 @@ import pywhatkit as kit
 import pygetwindow as gw
 import aiprocess as ap
 import AppOpener
+import markdown
 # import gemini_ai
 import os
 from docx import Document
@@ -47,6 +48,20 @@ def speak(text,speed=200):
     # engine.say(text)
     # engine.runAndWait()
 
+def convert_markdown_to_html(text):
+    # Convert markdown to HTML using the markdown library with additional extensions
+    extensions = [
+        'extra',        # Enables additional Markdown features like tables and footnotes
+        'codehilite',   # Adds syntax highlighting for code blocks
+        'toc',          # Generates a Table of Contents based on headings
+        'nl2br',        # Converts newlines to <br> for better text formatting
+        'sane_lists',   # Ensures consistent list formatting
+        'fenced_code',  # Enables triple-backtick code blocks
+        'admonition'    # Supports note/warning/info boxes
+    ]
+    
+    html = markdown.markdown(text, extensions=extensions)
+    return html
 
 # Voice to text
 def takecmd():
