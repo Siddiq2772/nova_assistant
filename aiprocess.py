@@ -104,6 +104,17 @@ def processcmd(command):
     f"- If the user asks to generate a DOCX with provided content, return 'docx <user_content>'.\n"
     f"- If the user asks to generate a DOCX with specific content like code or generated text, and no content is provided, return 'docx <generated_content_by_u>', where you generate the content (e.g., 'docx print('Hello World') if the user asks for 'Hello World code in Python').\n"
 
+    f"- If the user asks for data in a table or tabular format, return the response in the following structure: \n" 
+    f" 'table | Column1 | Column2 | ... | \n"  
+    f" |--------|--------|--------| \n"  
+    f" | Value1 | Value2 | Value3 |'  \n"
+
+    f"- Maintain proper alignment using pipes (|) for clear tabular formatting. \n" 
+    f"- Ensure the table includes a **header row** and **at least two data rows**. " 
+    f"- If the user asks for a multiplication table, return the numbers in a **structured format** (e.g., 'Multiplication Table for 3'). \n" 
+    f"- If the user requests country details, present the **country name and relevant information** in a structured table.\n"
+
+
     f"- If the user asks about themselves, return 'user'\n"
     f"- If the command is incomplete or not recognized, generate a response yourself and return it.\n"
     f"- If the user refers to something from previous messages, use the context from past interactions in {previous_chats}.\n"
