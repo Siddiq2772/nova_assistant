@@ -4,8 +4,6 @@ import json
 import AppOpener
 from config import API_KEY
 import database
-# from main1 as 
-
 
 
 # List of predefined commands
@@ -41,33 +39,29 @@ commands_list = [
     "exit"
 ]
 
-# Configure the API once globally to avoid redundant setup
+# Configure the API once globally
+ai.configure(api_key=API_KEY)
+
+# Create a new model and chat object once globally
+model = ai.GenerativeModel("gemini-2.0-flash")
+chat = model.start_chat()  # Initialize the chat session here
 
 def scanapp():
-    # pass
-    app_keys=AppOpener.give_appnames()
-    return app_keys
+    return AppOpener.give_appnames()
 
 def processcmd(command):
-    ai.configure(api_key=API_KEY)
-
-# Create a new model and chat object once
-    model = ai.GenerativeModel("gemini-2.0-flash")
-    chat = model.start_chat()
-    app_keys=scanapp()
-    
+    app_keys = scanapp()
 
     with open('task.json', 'r') as file:
         task_data = json.load(file)
-
-# Convert the JSON data to a formatted string
     json_data_str = json.dumps(task_data, indent=2)
 
-    previous_chats=database.get_last_five_conversations()
-    
-    # Refined prompt that asks the AI to match input with the correct command from the list
-    prompt = (
-    f"Your name is NOVA, You are a command assistant designed to help users, including those who may be illiterate or make mistakes in their input. "
+    previous_chats = database.get_last_five_conversations()
+
+    # Initial system prompt (sent only once)
+    if not chat.history:  # Check if chat history is empty
+        initial_prompt = (
+          f"Your name is NOVA, You are a command assistant designed to help users, including those who may be illiterate or make mistakes in their input. "
     f"Your task is to interpret the user's intent and correct any spelling mistakes, command structure errors, or word choice issues. "
     f"Consider the following possibilities for mistakes:\n"
     f"- The user might confuse 'go to' for websites and apps. If they say 'go to' followed by a website name, change it to 'go to <website>.com' if not specified. For apps, return 'open <app>' or 'close <app>' as needed, but only if the app name exists in the user's installed apps, which are listed in {app_keys}.\n"
@@ -119,19 +113,13 @@ def processcmd(command):
     f"- If the command is incomplete or not recognized, generate a response yourself and return it.\n"
     f"- If the user refers to something from previous messages, use the context from past interactions in {previous_chats}.\n"
     f"- Maintain a conversational flow and answer accordingly."
-)
-
-
+        )
+        chat.send_message(initial_prompt)
 
     try:
-        # Send the refined prompt to the AI
-        response = chat.send_message(prompt)
+        response = chat.send_message(command)
         matched_command = response.text.strip()
-
-        # Debug print the raw response from AI
         print(f"Raw AI Response: {matched_command}")
-
-        # Return the processed response from AI
         return matched_command
 
     except StopCandidateException as e:
@@ -142,6 +130,3 @@ def processcmd(command):
         print("AI Error: Sorry, something went wrong.")
         print(f"Error: {e}")
         return "Command not recognized. Please try again."
-    
-# print(processcmd("what time is it"))
-# print(app_name)

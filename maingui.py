@@ -496,26 +496,23 @@ class NovaInterface(QWidget):
     def show_main_interface(self):
         self.is_popup_mode = False
         self.stacked_widget.setCurrentWidget(self.main_widget)
-        self.showMaximized()  # Show in full screen
         self.setWindowFlags(Qt.Window)
         self.showMaximized()
 
     def toggle_input_mode(self):
         global toggleMic
         # Toggle visibility of the text field and microphone button
-        if self.chat_window.message_input.isVisible():
+        if self.chat_window.message_input.isVisible(): #show mic
             self.chat_window.message_input.hide()
-            self.state.show()
             self.chat_window.send_button.hide()
             self.mic_button.show()
             self.text_mode_button.setIcon(QIcon('icons/keyboard.png'))
             toggleMic = True
 
-        else:
+        else:  #show keyboard
             self.chat_window.message_input.show()
             self.text_mode_button.setIcon(QIcon('icons/mic.png'))
             self.chat_window.send_button.show()
-            self.state.hide()
             self.mic_button.hide()
             toggleMic = False
             b.mic_off = True
@@ -743,7 +740,6 @@ class ChatThread(QThread):
         while True:    
             if flag:
                 flag= False
-            
 
             if toggleMic and not b.mic_off:
                 self.state.emit("Listening...")
@@ -752,7 +748,10 @@ class ChatThread(QThread):
                 query = recoginze(takecmd_).lower()
 
             else:
-                self.state.emit("Listening stopped")
+                if not toggleMic:
+                    self.state.emit("keyboard mode")
+                else :
+                    self.state.emit("Listening stopped")
                 time.sleep(0.001)
                 query = prompt
                 prompt = "none"
@@ -803,6 +802,7 @@ class ChatThread(QThread):
                     if (not b.mic_off ) or not speaking:
                         self.micon.emit()
                         print("mic off")
+                        self.state.emit("muted")
                         break
                     self.state.emit(rt)
                     speak(rt)
