@@ -137,7 +137,7 @@ def convert_markdown_to_html(text):
                 text-decoration: underline;
             }}
             code {{
-                color: white;
+                color: {themeColor};
                 padding: 2px 5px;
                 border-radius: 3px;
                 font-family: monospace;
@@ -317,7 +317,7 @@ class ChatWindow(QWidget, QThread):
                 code_bubble.setTextFormat(Qt.RichText)
                 code_bubble.setStyleSheet(f"""
                     background-color: #1A2638;  /* Darker background for code */
-                    color: #56D364;
+                    color: white;
                     font-family: 'JetBrains Mono', 'Fira Code', monospace;
                     border-radius: 30px solid black;
                     padding: 10px;
