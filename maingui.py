@@ -11,6 +11,7 @@ from CustomMessageBox import *
 from backend import *
 import backend as b
 import database as db
+from bs4 import BeautifulSoup
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 BtnTextFont = '25px'
 toggleMic = True
@@ -99,8 +100,81 @@ def convert_markdown_to_html(text):
         'admonition'    # Supports note/warning/info boxes
     ]
     
-    html = markdown.markdown(text, extensions=extensions)
-    return html
+    html_content = markdown.markdown(text, extensions=extensions)
+    
+    bootstrap_html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{
+                background-color: #07151E;
+                color: #E8EAED;
+                font-family: Arial, sans-serif;
+                margin: 0;
+                line-height: 1.6;
+                font-size: 1.2rem;
+            }}
+            h1, h2, h3 {{ 
+                color: #6CCAFF;
+                font-weight: 500;
+            }}
+            p {{ 
+                font-size: 1.3rem;
+                margin-bottom: 1rem;
+            }}
+            a {{
+                color: #6CCAFF;
+                text-decoration: none;
+            }}
+            a:hover {{
+                text-decoration: underline;
+            }}
+            code {{
+                color: #56D364;
+                background-color: rgba(30, 53, 69, 0.4);
+                padding: 2px 5px;
+                border-radius: 3px;
+                font-family: monospace;
+            }}
+            pre {{
+                background-color: #1a2638;
+                border-radius: 5px;
+                padding: 10px;
+                overflow-x: auto;
+                font-family: monospace;
+            }}
+            blockquote {{
+                border-left: 4px solid #6CCAFF;
+                padding-left: 10px;
+                color: #B0BEC5;
+                margin: 10px 0;
+            }}
+            ul, ol {{
+                padding-left: 2rem;
+                font-size: 1.3rem;
+            }}
+            li {{
+                margin-bottom: 0.5rem;
+            }}
+            img {{
+                max-width: 100%;
+                height: auto;
+                border-radius: 0.5rem;
+                margin: 1rem 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <div>
+            {html_content}
+        </div>
+    </body>
+    </html>
+    """
+    
+    return bootstrap_html
 
 
 class ChatWindow(QWidget, QThread):
@@ -114,17 +188,14 @@ class ChatWindow(QWidget, QThread):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("background-color: #0F1C25; border: none;")
-
-
         self.message_history = []
-
-        self.browser = QWebEngineView()
 
         # Widget to hold the layout of chat bubbles
         self.chat_container = QWidget()
         
         self.chat_layout = QVBoxLayout(self.chat_container)
         print(self.maximumWidth())
+        self.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
         self.chat_layout.setAlignment(Qt.AlignTop)
 
         self.scroll_area.setWidget(self.chat_container)
@@ -137,7 +208,7 @@ class ChatWindow(QWidget, QThread):
         self.message_input = QTextEdit()
         self.message_input.setPlaceholderText("Enter Your Prompt")
         self.message_input.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: #6CCAFF; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
-        self.message_input.setFixedSize(700,100)
+        self.message_input.setFixedSize(600,100)
         self.input_layout.addWidget(self.message_input)
 
         self.send_button = QPushButton("Send")
@@ -196,365 +267,66 @@ class ChatWindow(QWidget, QThread):
         if self.message_history:
             return self.message_history[-1]  # Return last message from history list
         return ""
-
+        
     def create_bubble_widget(self, message, is_sent):
         # Create a QWidget to act as the message bubble
         bubble_frame = QFrame()
-        bubble_layout = QHBoxLayout(bubble_frame)
+        bubble_layout = QVBoxLayout(bubble_frame)  # Use VBoxLayout to handle multiple bubbles
+        
         if message.startswith("You: "): 
             is_sent = True
-            self.message_history.append(message.replace("You: ",""))
+            self.message_history.append(message.replace("You: ", ""))
         
-        # Create a label to display the message
-        bubble = QLabel()
-        bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        # Split message into text and code blocks
+        code_blocks = re.findall(r"```(.*?)```", message, re.DOTALL)  # Find all code blocks
+        text_parts = re.split(r"```.*?```", message, flags=re.DOTALL)  # Split message around code
+        message_container = QVBoxLayout()  # A separate layout to handle alignment
         
-        # Convert the message from markdown to HTML if not a "You:" message
-        if is_sent:
-            # For user messages, just set the text
-            bubble.setText(message)
-            bubble.setWordWrap(True)
-            bubble.setStyleSheet(f"""
-                 background-color: {themeColor if is_sent else '#0A1E2A'};
-                color: white;
-                border-radius: 10px;
-                padding: {"10px" if is_sent else "10px"};
-                font-size:{BtnTextFont};
-            """)
-        else:
-            # For bot responses with enhanced Bootstrap styling
-            html_content = convert_markdown_to_html(message)
-            bubble = QWebEngineView()
-
-            # Adjust bubble height based on content length
-            content_length = len(html_content)
-            if content_length < 50:
-                bubble.setFixedHeight(80)  # Small height for small content
-            elif content_length < 200:
-                bubble.setFixedHeight(130)  # Medium height
-            else:
-                bubble.setMaximumHeight(500)  # Allow expanding for larger content
-                bubble.setMinimumWidth(1000)
+        for index, text in enumerate(text_parts):
+            if text.strip():
+                text_bubble = QLabel()
+                text_bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                text_bubble.setText(convert_markdown_to_html(text.strip()))
+                text_bubble.setWordWrap(True)
+                text_bubble.setStyleSheet(f"""
+                    background-color: {themeColor if is_sent else '#0A1E2A'};
+                    color: white;
+                    border-radius: 10px;
+                    padding: 10px;
+                    font-size: {BtnTextFont};
+                """)
+                message_container.addWidget(text_bubble)
             
-            # Add Bootstrap and custom styling
-            bootstrap_html = f"""
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-                <style>
-                    body {{
-                        background-color: #07151E;
-                        color: #E8EAED;
-                        font-family: var(--bs-font-sans-serif);
-                        margin: 0;
-                        line-height: 1.6;
-                        font-size: 1.5rem;
-                    }}
-                    /* Webkit browsers (Chrome, Safari, newer Edge) */
-::-webkit-scrollbar {{
-    width: 8px;
-    height: 8px;
-}}
+            # If there's a corresponding code block, add it
+            if index < len(code_blocks):  
+                code_bubble = QLabel()
+                code_bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                code_bubble.setText(convert_markdown_to_html(code_blocks[index].strip()))
+                code_bubble.setWordWrap(True)
+                code_bubble.setStyleSheet(f"""
+                    background-color: #1A2638;  /* Darker background for code */
+                    color: #56D364;
+                    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+                    border-radius: 10px;
+                    padding: 10px;
+                    font-size: {BtnTextFont};
+                """)
+                message_container.addWidget(code_bubble)
 
-::-webkit-scrollbar-track {{
-    background: rgba(7, 21, 30, 0.6);
-    border-radius: 10px;
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: rgba(108, 202, 255, 0.5);
-    border-radius: 10px;
-    transition: all 0.3s ease;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: rgba(108, 202, 255, 0.8);
-}}
-
-/* Firefox */
-* {{
-    scrollbar-width: thin;
-    scrollbar-color: rgba(108, 202, 255, 0.5) rgba(7, 21, 30, 0.6);
-}}
-
-/* For the pre element specifically, to ensure code blocks scroll nicely */
-pre {{
-    overflow-x: auto;
-    scrollbar-width: thin;
-}}
-                    
-                    .message-content {{
-                        background-color: rgba(13, 37, 53, 0.9);
-                        border-radius: 1rem;
-                        border: 1px solid rgba(108, 202, 255, 0.2);
-                        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-                        padding: 1.25rem;
-                        margin-bottom: 0.5rem;
-                    }}
-                    
-                    h1, h2, h3 {{ 
-                        color: #6CCAFF;
-                        font-weight: 500;
-                    }}
-                    
-                    h1 {{ font-size: 2.4rem; }}
-                    h2 {{ font-size: 2rem; }}
-                    h3 {{ font-size: 1.75rem; }}
-                    
-                    p {{ 
-                        font-size: 1.3rem;
-                        margin-bottom: 1rem;
-                    }}
-                    
-                    a {{
-                        color: #6CCAFF;
-                        text-decoration: none;
-                        transition: all 0.2s ease;
-                        font-size: 1.3rem;
-                    }}
-                    
-                    a:hover {{
-                        color: #9DDEFF;
-                        text-decoration: underline;
-                    }}
-                    
-                    /* Enhanced code styling */
-                    code {{
-                        color: #56D364;
-                        padding: 0.2rem 0.4rem;
-                        border-radius: 0.25rem;
-                        font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-                        font-size: 1.1rem;
-                        word-wrap: break-word;
-                        background-color: rgba(30, 53, 69, 0.4);
-                    }}
-                    
-                    /* Advanced code block styling */
-                    pre {{
-                        background-color: #1a2638;
-                        border-radius: 0.75rem;
-                        padding: 0;
-                        margin: 1.5rem 0;
-                        overflow: hidden;
-                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                        border: 1px solid rgba(99, 179, 237, 0.2);
-                    }}
-                    
-                    pre .code-header {{
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        background-color: rgba(33, 45, 63, 0.9);
-                        padding: 0.5rem 1rem;
-                        border-bottom: 1px solid rgba(99, 179, 237, 0.2);
-                    }}
-                    
-                    pre .code-header .language-badge {{
-                        background-color: rgba(108, 202, 255, 0.2);
-                        border-radius: 0.25rem;
-                        padding: 0.2rem 0.5rem;
-                        font-size: 0.85rem;
-                        color: #6CCAFF;
-                    }}
-                    
-                    pre .code-container {{
-                        padding: 1rem;
-                        overflow-x: auto;
-                    }}
-                    
-                    pre code {{
-                        background-color: transparent;
-                        padding: 0;
-                        font-size: 1.1rem;
-                        white-space: pre;
-                        font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-                        line-height: 1.6;
-                    }}
-                    
-                    /* Syntax highlighting colors */
-                    .token.comment,
-                    .token.prolog,
-                    .token.doctype,
-                    .token.cdata {{
-                        color: #8a9199;
-                    }}
-                    
-                    .token.punctuation {{
-                        color: #e1e1e6;
-                    }}
-                    
-                    .token.property,
-                    .token.tag,
-                    .token.boolean,
-                    .token.number,
-                    .token.constant {{
-                        color: #FF79C6;
-                    }}
-                    
-                    .token.selector,
-                    .token.attr-name,
-                    .token.string,
-                    .token.char,
-                    .token.builtin {{
-                        color: #A9FF68;
-                    }}
-                    
-                    .token.operator,
-                    .token.entity,
-                    .token.url,
-                    .language-css .token.string,
-                    .style .token.string {{
-                        color: #67E8F9;
-                    }}
-                    
-                    .token.atrule,
-                    .token.attr-value,
-                    .token.keyword {{
-                        color: #F471B5;
-                    }}
-                    
-                    .token.function {{
-                        color: #FFD700;
-                    }}
-                    
-                    .token.regex,
-                    .token.important,
-                    .token.variable {{
-                        color: #F8BD96;
-                    }}
-                    
-                    .token.important,
-                    .token.bold {{
-                        font-weight: bold;
-                    }}
-                    
-                    .token.italic {{
-                        font-style: italic;
-                    }}
-                    
-                    ul, ol {{
-                        padding-left: 2rem;
-                        font-size: 1.3rem;
-                        margin-bottom: 1rem;
-                    }}
-                    
-                    li {{
-                        margin-bottom: 0.5rem;
-                    }}
-                    
-                    blockquote {{
-                        border-left: 0.25rem solid #6CCAFF;
-                        margin: 1rem 0;
-                        padding: 1rem;
-                        background-color: rgba(108, 202, 255, 0.1);
-                        border-radius: 0 0.5rem 0.5rem 0;
-                        font-size: 1.3rem;
-                    }}
-                    
-                    img {{
-                        max-width: 100%;
-                        height: auto;
-                        border-radius: 0.5rem;
-                        margin: 1rem 0;
-                        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
-                    }}
-                    
-                    table {{
-                        width: 100%;
-                        margin-bottom: 1rem;
-                        vertical-align: top;
-                        border-color: #30404D;
-                    }}
-                    
-                    th, td {{
-                        padding: 0.75rem;
-                        border: 1px solid #30404D;
-                        font-size: 1.2rem;
-                        word-wrap: break-word;
-                    }}
-                    
-                    thead {{
-                        background-color: rgba(30, 53, 69, 0.8);
-                        color: #E8EAED;
-                    }}
-                    
-                    tbody tr:nth-of-type(odd) {{
-                        background-color: rgba(30, 53, 69, 0.3);
-                        word-wrap: break-word;
-                    }}
-                </style>
-                <script>
-                    // Function to add code header with language badge
-                    document.addEventListener('DOMContentLoaded', function() {{
-                        const codeBlocks = document.querySelectorAll('pre code');
-                        codeBlocks.forEach(function(codeBlock) {{
-                            const pre = codeBlock.parentNode;
-                            
-                            // Create code header
-                            const header = document.createElement('div');
-                            header.className = 'code-header';
-                            
-                            // Create language badge
-                            const langBadge = document.createElement('span');
-                            langBadge.className = 'language-badge';
-                            
-                            // Try to detect language from class
-                            let lang = 'code';
-                            if (codeBlock.className) {{
-                                const match = codeBlock.className.match(/language-([a-z0-9]+)/i);
-                                if (match) {{
-                                    lang = match[1];
-                                }}
-                            }}
-                            
-                            langBadge.textContent = lang;
-                            header.appendChild(langBadge);
-                            
-                            // Create code container
-                            const container = document.createElement('div');
-                            container.className = 'code-container';
-                            
-                            // Move code into container
-                            const codeContent = codeBlock.cloneNode(true);
-                            container.appendChild(codeContent);
-                            
-                            // Clear pre and add new structure
-                            pre.innerHTML = '';
-                            pre.appendChild(header);
-                            pre.appendChild(container);
-                        }});
-                    }});
-                </script>
-            </head>
-            <body>
-                <div class="message-content">
-                    {html_content}
-                </div>
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-                <!-- Add PrismJS for syntax highlighting -->
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
-            </body>
-            </html>
-            """
-            bubble.setHtml(bootstrap_html)
-            bubble.setStyleSheet("""
-                background: #07151E;
-                border: none;
-            """)
-        
-        # Align messages appropriately
+        # Align the whole message container left or right
+        alignment_layout = QHBoxLayout()
         if is_sent:
-            bubble_layout.addStretch()  # Right-align sent messages
-            bubble_layout.addWidget(bubble)
+            alignment_layout.addStretch()  # Push messages to the right
+            alignment_layout.addLayout(message_container)
         else:
-            bubble_layout.addWidget(bubble)  # Left-align received messages
-            bubble_layout.addStretch()
+            alignment_layout.addLayout(message_container)
+            alignment_layout.addStretch()  # Push messages to the left
 
+        bubble_layout.addLayout(alignment_layout)
+        bubble_layout.setContentsMargins(10, 5, 10, 5)
         return bubble_frame
+
+
     def delete_conversation(self):
         # Delete all widgets inside the chat_layout
         db.delete_conversation()
@@ -566,6 +338,9 @@ pre {{
 
         # Optionally, force a UI update
         self.chat_container.update()
+   
+
+
 # NovaInterface with chat integration
 class NovaInterface(QWidget):
     def __init__(self):
