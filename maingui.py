@@ -11,8 +11,6 @@ from CustomMessageBox import *
 from backend import *
 import backend as b
 import database as db
-from bs4 import BeautifulSoup
-from PyQt5.QtWebEngineWidgets import QWebEngineView
 BtnTextFont = '25px'
 toggleMic = True
 themeColor = '#0085FF'
@@ -87,6 +85,12 @@ class PopupWindow(QWidget):
         self.hide()
         self.main_window.show_main_interface()
 
+def format_code_for_qlabel(code):
+    """ Converts code to an HTML-friendly format while preserving tabs and indentation. """
+    html_code = code.replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")  # Replace tabs with spaces
+    html_code = html_code.replace(" ", "&nbsp;")  # Preserve spaces
+    html_code = html_code.replace("\n", "<br>")  # Preserve new lines
+    return f"<pre><code>{html_code}</code></pre>"
 
 def convert_markdown_to_html(text):
     # Convert markdown to HTML using the markdown library with additional extensions
@@ -101,6 +105,7 @@ def convert_markdown_to_html(text):
     ]
     
     html_content = markdown.markdown(text, extensions=extensions)
+    
     
     bootstrap_html = f"""
     <!DOCTYPE html>
@@ -132,11 +137,14 @@ def convert_markdown_to_html(text):
                 text-decoration: underline;
             }}
             code {{
-                color: #56D364;
-                background-color: rgba(30, 53, 69, 0.4);
+                color: white;
                 padding: 2px 5px;
                 border-radius: 3px;
                 font-family: monospace;
+                background-color: #1A2638;
+                border-radius: 10px;
+                padding: 10px;
+                font-family: 'JetBrains Mono', 'Fira Code', monospace;
             }}
             pre {{
                 background-color: #1a2638;
@@ -144,6 +152,8 @@ def convert_markdown_to_html(text):
                 padding: 10px;
                 overflow-x: auto;
                 font-family: monospace;
+
+
             }}
             blockquote {{
                 border-left: 4px solid #6CCAFF;
@@ -288,6 +298,7 @@ class ChatWindow(QWidget, QThread):
                 text_bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
                 text_bubble.setText(convert_markdown_to_html(text.strip()))
                 text_bubble.setWordWrap(True)
+                text_bubble.setTextFormat(Qt.RichText)
                 text_bubble.setStyleSheet(f"""
                     background-color: {themeColor if is_sent else '#0A1E2A'};
                     color: white;
@@ -301,14 +312,17 @@ class ChatWindow(QWidget, QThread):
             if index < len(code_blocks):  
                 code_bubble = QLabel()
                 code_bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
-                code_bubble.setText(convert_markdown_to_html(code_blocks[index].strip()))
+                code_bubble.setText(convert_markdown_to_html(format_code_for_qlabel(code_blocks[index])))
                 code_bubble.setWordWrap(True)
+                code_bubble.setTextFormat(Qt.RichText)
                 code_bubble.setStyleSheet(f"""
                     background-color: #1A2638;  /* Darker background for code */
                     color: #56D364;
                     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-                    border-radius: 10px;
+                    border-radius: 30px solid black;
                     padding: 10px;
+                white-space: pre-wrap;  /* Ensures correct indentation */
+                                          
                     font-size: {BtnTextFont};
                 """)
                 message_container.addWidget(code_bubble)
