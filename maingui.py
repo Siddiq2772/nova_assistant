@@ -114,6 +114,8 @@ class ChatWindow(QWidget, QThread):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("background-color: #0F1C25; border: none;")
+
+
         self.message_history = []
 
         self.browser = QWebEngineView()
@@ -135,7 +137,7 @@ class ChatWindow(QWidget, QThread):
         self.message_input = QTextEdit()
         self.message_input.setPlaceholderText("Enter Your Prompt")
         self.message_input.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: #6CCAFF; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
-        self.message_input.setFixedSize(600,100)
+        self.message_input.setFixedSize(700,100)
         self.input_layout.addWidget(self.message_input)
 
         self.send_button = QPushButton("Send")
@@ -705,25 +707,25 @@ class NovaInterface(QWidget):
         self.bottom_layout = QHBoxLayout()
         
         # delete_button.setBackgroundRole(Qt.black)
-
+        control_size = 50
         self.text_mode_button = QPushButton()
         self.text_mode_button.setStyleSheet(btnStyle)
         self.text_mode_button.setIcon(QIcon('icons/keyboard.png'))
-        self.text_mode_button.setIconSize(QSize(50, 50))
+        self.text_mode_button.setIconSize(QSize(control_size, control_size))
         self.text_mode_button.clicked.connect(self.toggle_input_mode)
         # self.text_mode_button.setBackgroundRole(Qt.black)
 
         self.mute_button = QPushButton()
         self.mute_button.setStyleSheet(btnStyle)
         self.mute_button.setIcon(QIcon('icons/mute.png'))
-        self.mute_button.setIconSize(QSize(50, 50))
+        self.mute_button.setIconSize(QSize(control_size, control_size))
         self.mute_button.clicked.connect(self.toggle_mute)
         # self.mute_button.setBackgroundRole(Qt.black)
 
         self.float_window_button = QPushButton()
         self.float_window_button.setStyleSheet(btnStyle)
         self.float_window_button.setIcon(QIcon('icons/popup_open.png'))
-        self.float_window_button.setIconSize(QSize(50, 50))
+        self.float_window_button.setIconSize(QSize(control_size, control_size))
         self.float_window_button.clicked.connect(self.show_popup)
         # self.float_window_button.setBackgroundRole(Qt.black)
 
@@ -785,8 +787,10 @@ class NovaInterface(QWidget):
             self.close()
             
             # Start the signup_login.py script
-            python_executable = sys.executable
-            os.execl(python_executable, python_executable, "signup_login.py")
+            if(os.path.exists("signup_login.exe")):
+                        os.system("signup_login.exe")
+            else:            
+                            os.system("python signup_login.py") 
         
         except Exception as e:
             print(f"Error during logout: {e}")
@@ -804,8 +808,10 @@ class NovaInterface(QWidget):
                     os.remove('user_config.txt')
                 
                 self.close()
-                python_executable = sys.executable
-                os.execl(python_executable, python_executable, "signup_login.py")
+                if(os.path.exists("signup_login.exe")):
+                        os.system("signup_login.exe")
+                else:            
+                            os.system("python signup_login.py") 
         
         except Exception as e:
             print(f"Error during account deletion: {e}")
@@ -1144,6 +1150,7 @@ class ChatThread(QThread):
             time.sleep(1)
             if toggleMic and not b.mic_off:
                 speak("Sir, Do you have any other work")
+
           
      except Exception as e:
             print(e)
