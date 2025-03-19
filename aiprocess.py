@@ -5,7 +5,7 @@ import AppOpener
 from config import API_KEY
 import database
 
-
+print("aiprocess....")
 # List of predefined commands
 commands_list = [
     "go to <website name>",

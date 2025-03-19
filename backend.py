@@ -25,6 +25,8 @@ import psutil
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
 from ctypes import cast, POINTER
+print("backend....")
+
 mic_off=False
 obj=None
 msg = None

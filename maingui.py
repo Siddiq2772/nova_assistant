@@ -11,9 +11,10 @@ from CustomMessageBox import *
 from backend import *
 import backend as b
 import database as db
+print("maingui...")
 BtnTextFont = '25px'
 toggleMic = True
-themeColor = '#0085FF'
+themeColor = '#0085FF' 
 speaking = True
 prompt = "none"
 thread = True
@@ -28,12 +29,13 @@ class PopupWindow(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
+        self.setWindowIcon(QIcon('icons/nova_no_bg.png'))
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle('NOVA')
         self.setStyleSheet("background-color: #07151E; color: #ffffff;")
-        self.setGeometry(400, 0, 300, 150)
+        self.setGeometry(400, 0, 300, 100)
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
         btnStyle = f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 10px; border-radius:15px; border:5px solid {themeColor}"
 
@@ -42,7 +44,7 @@ class PopupWindow(QWidget):
         
         # Top section with centered mic button
         
-        self.mic_button = self.main_window.create_mic_button()
+        self.mic_button = self.main_window.create_mic_button_popup()
         self.mic_button.clicked.connect(self.main_window.micon)
         
         # Create controls
@@ -66,6 +68,7 @@ class PopupWindow(QWidget):
         self.mute_button.setIcon(QIcon('icons/mute.png'))
         self.mute_button.setIconSize(QSize(40, 40))
         self.mute_button.setFixedSize(60, 60)
+        self.mute_button.clicked.connect(self.main_window.toggle_mute)
 
         # Bottom section with controls
         bottom_layout = QHBoxLayout()
@@ -197,7 +200,6 @@ class ChatWindow(QWidget, QThread):
         # Scrollable area for chat bubbles
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setStyleSheet("background-color: #0F1C25; border: none;")
         self.message_history = []
 
         # Widget to hold the layout of chat bubbles
@@ -205,19 +207,48 @@ class ChatWindow(QWidget, QThread):
         
         self.chat_layout = QVBoxLayout(self.chat_container)
         print(self.maximumWidth())
-        self.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
+        # self.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
         self.chat_layout.setAlignment(Qt.AlignTop)
 
         self.scroll_area.setWidget(self.chat_container)
-
         layout.addWidget(self.scroll_area)
+
+        self.scroll_area.setStyleSheet("""
+            QScrollArea {
+                    background-color: #0F1C25;
+            border: none;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: #07151E;
+                width: 10px;
+                margin: 0px 0px 0px 0px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical {
+                background: #0085FF;
+                min-height: 20px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #0085FF;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                background: none;
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
+            }
+        """)
+
 
         # Input area
         self.input_layout = QHBoxLayout()
         self.input_layout.addStretch()
         self.message_input = QTextEdit()
         self.message_input.setPlaceholderText("Enter Your Prompt")
-        self.message_input.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: #6CCAFF; padding: 5px; border-radius:20px; border:5px solid {themeColor}")
+        self.message_input.setStyleSheet(f"background-color: #07151E; font-size: {BtnTextFont}; color: #6CCAFF; padding: 5px; border-radius:21px; border:5px solid {themeColor}")
         self.message_input.setFixedSize(600,100)
         self.input_layout.addWidget(self.message_input)
 
@@ -253,11 +284,11 @@ class ChatWindow(QWidget, QThread):
             }
         """)
         scrollbar = self.scroll_area.verticalScrollBar()
-        animation = QPropertyAnimation(scrollbar, b"value")
-        animation.setDuration(500)  # 500ms animation
-        animation.setStartValue(scrollbar.value())
-        animation.setEndValue(scrollbar.maximum())
-        animation.start()
+        self.animation = QPropertyAnimation(scrollbar, b"value")
+        self.animation.setDuration(500)  # 500ms animation
+        self.animation.setStartValue(scrollbar.value())
+        self.animation.setEndValue(scrollbar.maximum())
+        self.animation.start()
 
     def send_message(self):
         global prompt
@@ -267,6 +298,7 @@ class ChatWindow(QWidget, QThread):
             self.message_input.clear()
 
     def add_message(self, message, is_sent=False):
+    
         # Create a bubble widget for the message
         bubble_widget = self.create_bubble_widget(message, is_sent)
         self.chat_layout.addWidget(bubble_widget)
@@ -358,10 +390,10 @@ class ChatWindow(QWidget, QThread):
 # NovaInterface with chat integration
 class NovaInterface(QWidget):
     def __init__(self):
-        global movie
+        global movie  #for mic animation
         movie = QMovie("icons/mic_ani.gif")
         movie.speed = -500
-        global in_custom_message_box
+        global in_custom_message_box   
         self.state = QLabel("")
         self.state.setStyleSheet(f"""
                         color:{themeColor};
@@ -371,30 +403,27 @@ class NovaInterface(QWidget):
         super().__init__()
         self.chat_window = ChatWindow()
         self.is_popup_mode = False
+        self.setWindowIcon(QIcon('icons/nova_no_bg.png'))
         self.initUI()
+
         
         # demo(self)
-        state = QLabel("Listening...")
-        self.chat_window.message_input.installEventFilter(self)
+        self.chat_window.message_input.installEventFilter(self) 
         
         
-        state.setStyleSheet(f"""
-                        color:{themeColor};
-                        font-size: 50px;
-                        font-weight: bold;
-                    """)
-    def changeEvent(self, event):
+        
+    def changeEvent(self, event):   #state change of window
         if event.type() == QEvent.WindowStateChange:
             if self.isMinimized() and not in_custom_message_box:
                 print("Window minimized")
-                self.show_popup()
+                self.show_popup()  #shift to popup if the window is minimized
             elif self.isMaximized():
-                self.chat_window.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0)
+                # self.chat_window.chat_layout.setContentsMargins(int(self.maximumWidth()*0.00002),0,int(self.maximumWidth()*0.00002),0) #if the window is maximize the chat should have padding
 
                 print("Window maximized")
             else:
                 self.setBaseSize(1000, 1000)
-                self.chat_window.chat_layout.setContentsMargins(0,0,0,0)
+                self.chat_window.chat_layout.setContentsMargins(0,0,0,0) #if the window is not maximize the chat should not have padding
                 print("Window restored")
 
         if event.type() == QEvent.ActivationChange:
@@ -406,10 +435,10 @@ class NovaInterface(QWidget):
 
         super().changeEvent(event)
     def initUI(self):
-        self.setWindowTitle('NOVA')
+        self.setWindowTitle('NOVA')  
         self.setStyleSheet("background-color: #0F1C25; color: #ffffff;")
         self.popup = PopupWindow(self)
-        self.setMinimumSize(1000, 1000)
+        self.setMinimumSize(1200, 1000)
 
         # Main layout
         self.main_layout = QVBoxLayout()
@@ -454,13 +483,12 @@ class NovaInterface(QWidget):
         self.user_menu.addAction(logout_action)
 
         separator = self.user_menu.addSeparator()
-        separator.setObjectName("blueMenuSeparator")
 
         delete_action = QAction('Delete', self)
         delete_action.triggered.connect(self.delete_account)
         self.user_menu.addAction(delete_action)
 
-        # NOVA label (centered)
+        # NOVA label 
         self.nova_icon = QLabel()
         img = QPixmap('icons/nova_no_bg.png')
         self.nova_icon.setPixmap(img)
@@ -486,47 +514,46 @@ class NovaInterface(QWidget):
         top_layout.addWidget(self.sk_label)  
 
 
-        # Stretch settings for center and left side
         
-
+        # bottom_layout
+        self.bottom_layout = QHBoxLayout()
+        
+        #mic button
         self.mic_button = self.create_mic_button()       
         self.mic_button.clicked.connect(self.micon)
         self.mic_button.setStyleSheet("border: none;")
-        # Bottom but.bottom_layout
-        self.bottom_layout = QHBoxLayout()
         
-        # delete_button.setBackgroundRole(Qt.black)
-        control_size = 50
+        control_size = 50 #control buttons size
+
+        #button for text mode
         self.text_mode_button = QPushButton()
         self.text_mode_button.setStyleSheet(btnStyle)
         self.text_mode_button.setIcon(QIcon('icons/keyboard.png'))
         self.text_mode_button.setIconSize(QSize(control_size, control_size))
         self.text_mode_button.clicked.connect(self.toggle_input_mode)
-        # self.text_mode_button.setBackgroundRole(Qt.black)
 
+        #button for mute
         self.mute_button = QPushButton()
         self.mute_button.setStyleSheet(btnStyle)
         self.mute_button.setIcon(QIcon('icons/mute.png'))
         self.mute_button.setIconSize(QSize(control_size, control_size))
         self.mute_button.clicked.connect(self.toggle_mute)
-        # self.mute_button.setBackgroundRole(Qt.black)
 
+        #button for popup window
         self.float_window_button = QPushButton()
         self.float_window_button.setStyleSheet(btnStyle)
         self.float_window_button.setIcon(QIcon('icons/popup_open.png'))
         self.float_window_button.setIconSize(QSize(control_size, control_size))
         self.float_window_button.clicked.connect(self.show_popup)
-        # self.float_window_button.setBackgroundRole(Qt.black)
 
         self.bottom_layout.addStretch()
         self.bottom_layout.addWidget(self.text_mode_button)
         self.bottom_layout.addWidget(self.mic_button)
-        # self.bottom_layout.addLayout(self.chat_window.input_layout)
         self.bottom_layout.addWidget(self.mute_button)
         self.bottom_layout.addWidget(self.float_window_button)
         self.bottom_layout.addStretch()
 
-        self.bottom = QWidget()
+        self.bottom = QWidget() #to enclosed the bottom layout in order to apply stylesheet
         self.bottom.setLayout(self.bottom_layout)
         self.bottom.setStyleSheet(f"border: 5px solid {themeColor}; border-radius: 40px; background-color: #07151E; padding: 0px;")
         self.b = QHBoxLayout()
@@ -534,10 +561,18 @@ class NovaInterface(QWidget):
         self.b.addWidget(self.bottom)
         self.b.addStretch()
 
+
+        #making chatwindow fixed in width
+        self.chat_window.setFixedWidth(1200)
+        self.chatwindow = QHBoxLayout()
+        self.chatwindow.addStretch()
+        self.chatwindow.addWidget(self.chat_window)
+        self.chatwindow.addStretch()
+
+
         # Add all sections to the main layout
         self.main_layout.addLayout(top_layout)
-        # Add the chat window in the middle
-        self.main_layout.addWidget(self.chat_window)
+        self.main_layout.addLayout(self.chatwindow)
         self.main_layout.addLayout(self.b)
         self.main_layout.addWidget(self.state,alignment=Qt.AlignCenter)
         
@@ -555,7 +590,7 @@ class NovaInterface(QWidget):
         self.popup_widget = QWidget(self.popup)
         
         self.stacked_widget.addWidget(self.popup_widget)
-        self.popup.mute_button.clicked.connect(self.toggle_mute)
+        # self.popup.mute_button.clicked.connect(self.toggle_mute)
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.stacked_widget)
@@ -564,7 +599,6 @@ class NovaInterface(QWidget):
 
     def delete_conversation(self):
             threading.Thread(target=self.chat_window.delete_conversation).start()
-            speak("Conversation deleted")
     
     def logout(self):
         try:
@@ -577,9 +611,9 @@ class NovaInterface(QWidget):
             
             # Start the signup_login.py script
             if(os.path.exists("signup_login.exe")):
-                        os.system("signup_login.exe")
+                    os.system("signup_login.exe")
             else:            
-                            os.system("python signup_login.py") 
+                    os.system("python signup_login.py") 
         
         except Exception as e:
             print(f"Error during logout: {e}")
@@ -639,6 +673,21 @@ class NovaInterface(QWidget):
     def create_mic_button(self):
         global movie
         mic_size = 150
+        mic_button = QPushButton(self)
+        mic_button.setFixedSize(mic_size , mic_size)
+        mic_label = QLabel(mic_button)
+        mic_label.setGeometry(0, 0, mic_size , mic_size)
+        mic_label.setMovie(movie)
+        mic_label.setScaledContents(True)
+        # movie.finished.connect(movie.start)
+
+        movie.start()
+        # movie.stop()
+        return mic_button
+    
+    def create_mic_button_popup(self):
+        global movie
+        mic_size = 100
         mic_button = QPushButton(self)
         mic_button.setFixedSize(mic_size , mic_size)
         mic_label = QLabel(mic_button)
@@ -792,11 +841,13 @@ class NovaInterface(QWidget):
         # Show the menu below the SK label
         self.user_menu.exec_(self.sk_label.mapToGlobal(self.sk_label.rect().bottomLeft()))
     def send_message(self,message):
+        global in_custom_message_box
         speak("Please provide the phone number to which I should send messages.")
+        in_custom_message_box=True
         number = CustomInputBox.show_input_dialog("Please provide the phone number to which I should send messages")
         while (len(number)<=9):
             number = CustomInputBox.show_input_dialog(f"The provided phone number have only {len(number)} digits Please Enter again")
-
+        in_custom_message_box = False
         speak("This process may take a few seconds")
         now = datetime.now()
         country_code="+91"
@@ -825,30 +876,30 @@ class ChatThread(QThread):
     def __init__(self,obj):
         super().__init__()
     def run(self):
-     flag = True
-     global prompt
-     global ret
-     global thread
-     global speaking
-     thread = True
+     flag = True  # 
+     global prompt # it is used to send the input from gui to chatthread 
+     global thread # to check if the user want to destroy the thread
+     global speaking # is reprsent if the speaking is working or not
+
+     thread = True # initatly is true
      try:
         def fecth_converson():
             self.name.emit(db.get_user_initials())
-        conversations = db.get_conversations()
-        if conversations :
-            
-            for conv in conversations:
-            # Get the encrypted data as a string
-                encrypted_user_input = conv.to_dict().get('user_input')
-                encrypted_assistant_response = conv.to_dict().get('assistant_response')
-                try:
-                # Decrypt the data
-                    user_input = db.decrypt_data(encrypted_user_input.encode('utf-8')) if isinstance(encrypted_user_input, str) else db.decrypt_data(encrypted_user_input)
-                    assistant_response = db.decrypt_data(encrypted_assistant_response.encode('utf-8')) if isinstance(encrypted_assistant_response, str) else db.decrypt_data(encrypted_assistant_response)
-                    self.message_received.emit(user_input)
-                    self.message_received.emit(assistant_response)
-                except Exception as decryption_error:
-                    print(f"Decryption error for conversation ID {conv.id}: {decryption_error}")
+            conversations = db.get_conversations()
+            if conversations :
+                
+                for conv in conversations:
+                # Get the encrypted data as a string
+                    encrypted_user_input = conv.to_dict().get('user_input')
+                    encrypted_assistant_response = conv.to_dict().get('assistant_response')
+                    try:
+                    # Decrypt the data
+                        user_input = db.decrypt_data(encrypted_user_input.encode('utf-8')) if isinstance(encrypted_user_input, str) else db.decrypt_data(encrypted_user_input)
+                        assistant_response = db.decrypt_data(encrypted_assistant_response.encode('utf-8')) if isinstance(encrypted_assistant_response, str) else db.decrypt_data(encrypted_assistant_response)
+                        self.message_received.emit(user_input)
+                        self.message_received.emit(assistant_response)
+                    except Exception as decryption_error:
+                        print(f"Decryption error for conversation ID {conv.id}: {decryption_error}")
         threading.Thread(target=fecth_converson).start()
 
         # Simulate receiving a message
@@ -892,20 +943,12 @@ class ChatThread(QThread):
                 self.shutdown.emit()
                 result = "shutdowning your computer"
 
-
             if result =="sleep_": 
                 self.sleep.emit()
                 result = "sleeping your computer"
 
             if result.__contains__("sending  message"): 
                 self.send_message.emit(result.replace("sending  message","",1))
-                
-
-
-
-                         
-                # result = "message send" 
-
             
             self.message_received.emit(result)
                 
