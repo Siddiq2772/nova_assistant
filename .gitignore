@@ -12,5 +12,7 @@ signup_login.spec
 *.exe
 *.spec
 *.zip
+build/
+dist/
 
 
