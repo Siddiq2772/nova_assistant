@@ -9,8 +9,6 @@ import pywhatkit as kit
 import pygetwindow as gw
 import aiprocess as ap
 import AppOpener
-import markdown
-# import gemini_ai
 import os
 from docx import Document
 import time
