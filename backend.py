@@ -9,6 +9,8 @@ import pywhatkit as kit
 import pygetwindow as gw
 import aiprocess as ap
 import AppOpener
+import markdown
+# import gemini_ai
 import os
 from docx import Document
 import time
@@ -20,6 +22,7 @@ import datetime
 from database import *
 import sys
 import psutil
+from tkinter import filedialog, Tk
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
 from ctypes import cast, POINTER
@@ -318,79 +321,207 @@ def battery():
 def help_function():
     help_text = (
         "Welcome to the Command Assistant!, My name is Nova, Here are some commands you can use:\n\n"
-        "1. **Go to <website name>**\n"
-        "   - Example: 'Go to amazon' or 'Go to google'\n"
-        "   - Opens the website in your browser. The assistant will append '.com' to the website name if not specified.\n\n"
-        
-        "2. **Search on Google <query>**\n"
-        "   - Example: 'Search on Google Python tutorials'\n"
-        "   - Performs a Google search with the specified query.\n\n"
-        
-        "3. **Open <app/system tool>**\n"
-        "   - Example: 'Open calculator' or 'Open notepad'\n"
-        "   - Opens the specified application or system tool.\n\n"
-        
-        "4. **IP address of my device**\n"
-        "   - Example: 'IP address of my device'\n"
-        "   - Provides the IP address of your device.\n\n"
-        
-        "5. **Search on Wikipedia <topic>**\n"
-        "   - Example: 'Search on Wikipedia Python programming'\n"
-        "   - Searches Wikipedia for the specified topic and reads a summary.\n\n"
-        
-        "6. **Send message**\n"
-        "   - Example: 'Send message'\n"
-        "   - Prompts you to provide a phone number and a message to send via WhatsApp.\n\n"
-        
-        "7. **Current temperature <city_name>**\n"
-        "   - Example: 'Current temperature in New York'\n"
-        "   - Provides the current temperature for the specified city.\n\n"
-        
-        "8. **Play video on YouTube <video_name>**\n"
-        "   - Example: 'Play video on YouTube Python tutorial'\n"
-        "   - Searches for and plays the specified video on YouTube.\n\n"
-        
-        "9. **Current time**\n"
-        "   - Example: 'Current time'\n"
-        "   - Provides the current time.\n\n"
-        
-        "10. **AI mode <query>**\n"
-        "    - Example: 'AI mode What is the weather like?'\n"
-        "    - Interacts with the AI model to process your query in AI mode.\n\n"
-        
-        "11. **Shutdown**\n"
-        "    - Example: 'Shutdown'\n"
-        "    - Shuts down the computer.\n\n"
-        
-        "12. **Restart**\n"
-        "    - Example: 'Restart'\n"
-        "    - Restarts the computer.\n\n"
-        
-        "13. **Sleep**\n"
-        "    - Example: 'Sleep'\n"
-        "    - Puts the computer into sleep mode.\n\n"
-        
-        "14. **Minimise window**\n"
-        "    - Example: 'Minimise window'\n"
-        "    - Minimizes the currently active window.\n\n"
-        
-        "15. **Maximise window**\n"
-        "    - Example: 'Maximise window'\n"
-        "    - Maximises the currently active window.\n\n"
-        
-        "16. **Close window**\n"
-        "    - Example: 'Close window'\n"
-        "    - Closes the currently active window.\n\n"
-        
-          "17. **type <text>**\n"
-        "     - Example: 'Type Hello, my name is Nova'\n"
-        "     - Automatically types the specified text as if you typed it manually..\n\n"
-        
-         "18. **No thanks exit**\n"
-        "    - Example: 'No thanks exit'\n"
-        "    - Exits the assistant.\n\n"
-        
-        "If you need help with a specific command or have any questions, just ask!"
+"(1) **Go to <website name>**\n"
+"  - Example: 'Go to amazon' or 'Go to google'\n"
+"  - Opens the website in your browser. The assistant will append '.com' to the website name if not specified.\n\n"
+
+"(2) **Search on Google <query>**\n"
+"  - Example: 'Search on Google Python tutorials'\n"
+"  - Performs a Google search with the specified query.\n\n"
+
+"(3) **Open <app/system tool>**\n"
+"  - Example: 'Open calculator' or 'Open notepad'\n"
+"  - Opens the specified application or system tool.\n\n"
+
+"(4) **IP address of my device**\n"
+"  - Example: 'IP address of my device'\n"
+"  - Provides the IP address of your device.\n\n"
+
+"(5) **Search on Wikipedia <topic>**\n"
+"  - Example: 'Search on Wikipedia Python programming'\n"
+"  - Searches Wikipedia for the specified topic and reads a summary.\n\n"
+
+"(6) **Send message**\n"
+"  - Example: 'Send message'\n"
+"  - Prompts you to provide a phone number and a message to send via WhatsApp.\n\n"
+
+"(7) **Current temperature <city_name>**\n"
+"  - Example: 'Current temperature in New York'\n"
+"  - Provides the current temperature for the specified city.\n\n"
+
+"(8) **Play video on YouTube <video_name>**\n"
+"  - Example: 'Play video on YouTube Python tutorial'\n"
+"  - Searches for and plays the specified video on YouTube.\n\n"
+
+"(9) **Current time**\n"
+"  - Example: 'Current time'\n"
+"  - Provides the current time.\n\n"
+
+"(10) **AI mode <query>**\n"
+"  - Example: 'AI mode What is the weather like?'\n"
+"  - Interacts with the AI model to process your query in AI mode.\n\n"
+
+"(11) **Shutdown**\n"
+"  - Example: 'Shutdown'\n"
+"  - Shuts down the computer.\n\n"
+
+"(12) **Restart**\n"
+"  - Example: 'Restart'\n"
+"  - Restarts the computer.\n\n"
+
+"(13) **Sleep**\n"
+"  - Example: 'Sleep'\n"
+"  - Puts the computer into sleep mode.\n\n"
+
+"(14) **Minimise window**\n"
+"  - Example: 'Minimise window'\n"
+"  - Minimizes the currently active window.\n\n"
+
+"(15) **Maximise window**\n"
+"  - Example: 'Maximise window'\n"
+"  - Maximises the currently active window.\n\n"
+
+"(16) **Close window**\n"
+"  - Example: 'Close window'\n"
+"  - Closes the currently active window.\n\n"
+
+"(17) **type <text>**\n"
+"  - Example: 'Type Hello, my name is Nova'\n"
+"  - Automatically types the specified text as if you typed it manually..\n\n"
+
+"(18) **No thanks exit**\n"
+"  - Example: 'No thanks exit'\n"
+"  - Exits the assistant.\n\n"
+
+"(19) **Type <text> or Generate type <text>**\n"
+"  - Example: 'Type Hello coders' or 'Write Good morning, everyone!'\n"
+"  - Types exactly what you specify or generates and types intelligent responses based on your query.\n\n"
+"  - Example: 'Generate type: What is Python?'\n"
+"  - Generates a response and types it, e.g., 'type Python is a high-level programming language known for its simplicity and readability.'\n\n"
+
+"(20) **Change Theme <dark/light>**\n"
+"  - Example: 'turn on dark theme' or 'switch to light theme'\n"
+"  - Switches the theme of the system between dark and light modes, based on the user's input.\n\n"
+"  - Example: 'set theme to dark'\n"
+"  - Example: 'change to light mode'\n\n"
+
+"(21) **PDF <content> or generate PDF <topic>**\n"
+"  - Example: 'generate a PDF with this content: Hello World in Python'\n"
+"  - Generates a PDF with the provided content. If the user requests AI-generated content, the assistant will analyze the request, generate the most relevant response, and return it in a 'pdf <response>' format.\n\n"
+"  - Example: 'I want Hello World code in Python in PDF'\n"
+"  - Example: 'create a PDF for How to use a function in Python'\n"
+"  - Example: 'generate pdf What is Python?'\n"
+"  - Example: 'generate pdf How do I create a class in Python?'\n\n"
+
+"(22) **DOCX <content> or generate DOCX <topic>**\n"
+"  - Example: 'generate a DOCX with this content: Hello World in Python'\n"
+"  - Generates a DOCX file only if the user explicitly requests it. If the user provides content, it will return in the format 'docx <user_content>'. If AI-generated content is requested, it will return in the format 'docx <generated_response>'.\n"
+"  - If no explicit DOCX request is made, the assistant processes the query normally without DOCX prefix.\n\n"
+"  - Example: 'I want Hello World code in Python in DOCX'\n"
+"  - Example: 'create a DOCX for How to use a function in Python'\n"
+"  - Example: 'generate docx How does a for loop work in Python?'\n"
+"  - Example: 'generate docx What are Python data types?'\n"
+"  - Example: 'generate docx How do I create a class in Python?'\n\n"
+
+"(23) **COPY**\n"
+"  - Example: 'ctrl + c'\n"
+"  - Copies the selected text.\n\n"
+
+"(24) **PASTE**\n"
+"  - Example: 'ctrl + v'\n"
+"  - Pastes the copied text.\n\n"
+
+"(25) **CUT**\n"
+"  - Example: 'ctrl + x'\n"
+"  - Cuts the selected text.\n\n"
+
+"(26) **UNDO**\n"
+"  - Example: 'ctrl + z'\n"
+"  - Undoes the last action.\n\n"
+
+"(27) **OPEN CLIPBOARD**\n"
+"  - Example: 'win + v'\n"
+"  - Opens the clipboard.\n\n"
+
+"(28) **SAVE**\n"
+"  - Example: 'ctrl + s'\n"
+"  - Saves the document.\n\n"
+
+"(29) **NEW TAB**\n"
+"  - Example: 'ctrl + t'\n"
+"  - Opens a new tab in the browser.\n\n"
+
+"(30) **SELECT ALL**\n"
+"  - Example: 'ctrl + a'\n"
+"  - Selects all text or items.\n\n"
+
+"(31) **CLOSE TAB**\n"
+"  - Example: 'ctrl + w'\n"
+"  - Closes the current tab.\n\n"
+
+"(32) **ALT TAB**\n"
+"  - Example: 'alt + tab'\n"
+"  - Switches between open applications.\n\n"
+
+"(33) **SHOW DESKTOP**\n"
+"  - Example: 'show desktop'\n"
+"  - Minimizes all windows to show the desktop.\n\n"
+
+"(34) **MINIMIZE ALL**\n"
+"  - Example: 'minimize all'\n"
+"  - Minimizes all windows.\n\n"
+
+"(35) **FIND**\n"
+"  - Example: 'ctrl + f'\n"
+"  - Finds text within a document or webpage.\n\n"
+
+"(36) **NEW WINDOW**\n"
+"  - Example: 'ctrl + n'\n"
+"  - Opens a new window.\n\n"
+
+"(37) **START**\n"
+"  - Example: 'click on start'\n"
+"  - Opens the start menu.\n\n"
+
+"(38) **NOTIFICATION**\n"
+"  - Example: 'win + n'\n"
+"  - Opens the notification center.\n\n"
+
+"(39) **NEW DESKTOP**\n"
+"  - Example: 'win + ctrl + d'\n"
+"  - Creates a new virtual desktop.\n\n"
+
+"(40) **SWITCH RIGHT**\n"
+"  - Example: 'switch to right virtual desktop'\n"
+"  - Switches to the next virtual desktop on the right.\n\n"
+
+"(41) **SWITCH LEFT**\n"
+"  - Example: 'switch to left virtual desktop'\n"
+"  - Switches to the previous virtual desktop on the left.\n\n"
+
+"(42) **CLOSE DESKTOP**\n"
+"  - Example: 'win + ctrl + f4'\n"
+"  - Closes the current virtual desktop.\n\n"
+
+"(43) **VOLUME DOWN**\n"
+"  - Example: 'ctrl + down'\n"
+"  - Decreases the system volume.\n\n"
+
+"(44) **VOLUME UP**\n"
+"  - Example: 'ctrl + up'\n"
+"  - Increases the system volume.\n\n"
+
+"(45) **BRIGHTNESS UP**\n"
+"  - Example: 'ctrl + up'\n"
+"  - Increases the screen brightness.\n\n"
+
+"(46) **BRIGHTNESS DOWN**\n"
+"  - Example: 'ctrl + down'\n"
+"  - Decreases the screen brightness.\n\n"
+
+"(47) **BOTTOM RIGHT**\n"
+"  - Example: 'toggle Airplane Mode'\n"
+"  - Toggles various system functions in the bottom right corner.\n\n"
     )
     return help_text
     
@@ -539,20 +670,16 @@ def current_date():
     return f"Today's date is {date_str}"
 
 def generate_pdf(content):
-    # Get the Downloads folder path
-    downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    # Initialize Tkinter root window
+    root = Tk()
+    root.withdraw()  # Hide the Tkinter root window
 
-    # Specify the base filename for the PDF
-    base_filename = "NOVA_generated_pdf"
-    pdf_filename = base_filename + ".pdf"
-    pdf_path = os.path.join(downloads_folder, pdf_filename)
-
-    # Check if file already exists and create a unique filename
-    counter = 1
-    while os.path.exists(pdf_path):
-        pdf_filename = f"{base_filename}({counter}).pdf"
-        pdf_path = os.path.join(downloads_folder, pdf_filename)
-        counter += 1
+    # Ask the user where to save the PDF
+    pdf_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")], title="Save PDF As")
+    
+    # Check if the user canceled the save dialog
+    if not pdf_path:
+        return "PDF generation was canceled."
 
     # Create PDF instance
     pdf = FPDF()
@@ -565,10 +692,11 @@ def generate_pdf(content):
     # Add content to the PDF
     pdf.multi_cell(0, 10, content)
 
-    # Output the PDF to the Downloads folder
+    # Output the PDF to the chosen path
     pdf.output(pdf_path)
     
-    if os.name == 'nt': 
+    # Open the PDF if on Windows
+    if os.name == 'nt':
         os.startfile(pdf_path)
 
     return f"PDF generated successfully: {pdf_path}"
@@ -576,29 +704,26 @@ def generate_pdf(content):
 
 
 def generate_docx(content):
-    # Get the Downloads folder path
-    downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    # Initialize Tkinter root window
+    root = Tk()
+    root.withdraw()  # Hide the Tkinter root window
 
-    # Specify the base filename for the DOCX
-    base_filename = "NOVA_generated_docx"
-    docx_filename = base_filename + ".docx"
-    docx_path = os.path.join(downloads_folder, docx_filename)
-
-    # Check if file already exists and create a unique filename
-    counter = 1
-    while os.path.exists(docx_path):
-        docx_filename = f"{base_filename}({counter}).docx"
-        docx_path = os.path.join(downloads_folder, docx_filename)
-        counter += 1
+    # Ask the user where to save the DOCX
+    docx_path = filedialog.asksaveasfilename(defaultextension=".docx", filetypes=[("Word documents", "*.docx")], title="Save DOCX As")
+    
+    # Check if the user canceled the save dialog
+    if not docx_path:
+        return "DOCX generation was canceled."
 
     # Create a new Word document
     doc = Document()
     doc.add_paragraph(content)
 
-    # Save the document
+    # Save the document to the chosen path
     doc.save(docx_path)
-    
-    if os.name == 'nt': 
+
+    # Open the DOCX if on Windows
+    if os.name == 'nt':
         os.startfile(docx_path)
 
     return f"DOCX generated successfully: {docx_path}"

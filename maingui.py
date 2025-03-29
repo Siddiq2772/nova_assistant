@@ -341,19 +341,46 @@ class ChatWindow(QWidget, QThread):
         message_container = QVBoxLayout()  # A separate layout to handle alignment
         
         for index, text in enumerate(text_parts):
-            if text.strip():
-                text_bubble = QLabel()
+         if text.strip():
+            t = text.strip()  # remove trailing and leading whitespace.
+            lines = t.split('\n')
+            current_start = 0
+
+            if len(lines) > 111:
+                while current_start < len(lines):
+                    end_index = min(current_start + 111, len(lines))
+                    bubble_text = '\n'.join(lines[current_start:end_index])
+
+                    text_bubble = QLabel()  # Create a NEW QLabel here!
+                    text_bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                    text_bubble.setWordWrap(True)
+                    text_bubble.setTextFormat(Qt.RichText)
+                    text_bubble.setStyleSheet(f"""
+                        background-color: {themeColor if is_sent else '#0A1E2A'};
+                        color: white;
+                        border-radius: 10px;
+                        padding: 10px;
+                        font-size: {BtnTextFont};
+                    """)
+
+                    text_bubble.setText(convert_markdown_to_html(bubble_text.strip()))
+                    message_container.addWidget(text_bubble)
+
+                    current_start = end_index
+            else:
+                text_bubble = QLabel() #Create a new QLabel here.
                 text_bubble.setTextInteractionFlags(Qt.TextSelectableByMouse)
-                text_bubble.setText(convert_markdown_to_html(text.strip()))
                 text_bubble.setWordWrap(True)
                 text_bubble.setTextFormat(Qt.RichText)
                 text_bubble.setStyleSheet(f"""
-                    background-color: {themeColor if is_sent else '#0A1E2A'};
-                    color: white;
-                    border-radius: 10px;
-                    padding: 10px;
-                    font-size: {BtnTextFont};
-                """)
+                        background-color: {themeColor if is_sent else '#0A1E2A'};
+                        color: white;
+                        border-radius: 10px;
+                        padding: 10px;
+                        font-size: {BtnTextFont};
+                    """)
+
+                text_bubble.setText(convert_markdown_to_html(text.strip()))
                 message_container.addWidget(text_bubble)
             
             # If there's a corresponding code block, add it
