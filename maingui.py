@@ -14,18 +14,14 @@ from backend import *
 import backend as b
 import database as db
 print("maingui...")
-BtnTextFont = '25px'
-toggleMic = True
-themeColor = '#0085FF' 
-speaking = True
-prompt = "none"
-thread = True
-btnStyle = f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:30px; border:5px solid {themeColor}"
-devices = AudioUtilities.GetSpeakers()
-interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-volume = ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
-movie = None
-ret = None
+BtnTextFont = '25px'#deafult text size
+toggleMic = True # true means mic mode is toggled
+themeColor = '#0085FF' #the blue theme color
+speaking = True  # is reprsent if the speaking is working or not
+prompt = "none" # it is used to send the input from gui to chatthread 
+thread = True # to check if the user want to destroy the thread
+btnStyle = f"background-color: #07151E; font-size: {BtnTextFont}; color: {themeColor}; padding: 5px; border-radius:30px; border:5px solid {themeColor}" #common button style
+movie = None # varidle for animation , it is global because it needs to take the animation in the popup and the maingui
 
 class PopupWindow(QWidget):
     def __init__(self, main_window):
@@ -113,8 +109,6 @@ def convert_markdown_to_html(text):
     ]
     
     html_content = markdown.markdown(text, extensions=extensions)
-    
-    
     bootstrap_html = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -958,7 +952,7 @@ class ChatThread(QThread):
                 self.state.emit("Listening...")
                 takecmd_ = takecmd()
                 self.state.emit("Recognizing...")
-                query = recoginze(takecmd_).lower()
+                query = recognize(takecmd_).lower()
 
             else:
                 if not toggleMic:
@@ -1023,8 +1017,6 @@ class ChatThread(QThread):
             if toggleMic:
                 self.micon.emit()
             time.sleep(1)
-            if toggleMic and not b.mic_off:
-                speak("Sir, Do you have any other work")
 
           
      except Exception as e:

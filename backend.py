@@ -76,7 +76,7 @@ def takecmd():
             return 
         return audio
     
-def recoginze(audio):
+def recognize(audio):
     print("Recognizing...")
     try :
         if mic_off: return "none"
