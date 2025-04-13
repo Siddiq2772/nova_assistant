@@ -244,7 +244,7 @@ class ChatWindow(QWidget, QThread):
             QPushButton:hover {
                 background-color: #128C7E;
             }
-        """)
+        """) 
 
         scrollbar = self.scroll_area.verticalScrollBar()
         self.animation = QPropertyAnimation(scrollbar, b"value")
