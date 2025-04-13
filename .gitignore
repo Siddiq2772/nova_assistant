@@ -14,5 +14,6 @@ signup_login.spec
 *.zip
 build/
 dist/
+temp.py
 
 
