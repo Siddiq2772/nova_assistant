@@ -9,7 +9,7 @@ import pywhatkit as kit
 import pygetwindow as gw
 import aiprocess as ap
 import AppOpener
-import markdown
+import threading
 import wmi
 # import gemini_ai
 import os
@@ -51,6 +51,7 @@ def speak(text,speed=200):
     engine.runAndWait()
     # engine.say(text)
     # engine.runAndWait()
+
 
 
 
