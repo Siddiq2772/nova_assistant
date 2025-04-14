@@ -176,6 +176,7 @@ class ChatWindow(QWidget, QThread):
             QScrollBar:vertical {
                 border: none;
                 background: #07151E;
+                                       
                 width: 10px;
                 margin: 0px 0px 0px 0px;
                 border-radius: 4px;
