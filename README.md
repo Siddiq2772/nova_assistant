@@ -1,6 +1,4 @@
-Here's your content formatted properly for a GitHub README:
 
-```markdown
 # Nova Desktop Assistant
 
 Nova is a voice-controlled desktop assistant with speech recognition capabilities designed to help users interact with their system more intuitively. It supports a variety of commands, including opening applications, browsing the web, and sending messages through WhatsApp. Nova is designed to streamline tasks and improve productivity through hands-free control.
