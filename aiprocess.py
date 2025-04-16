@@ -1,5 +1,6 @@
 import google.generativeai as ai
 from google.generativeai.types.generation_types import StopCandidateException
+from google.api_core import exceptions
 import json
 import AppOpener
 from config import API_KEY
@@ -49,7 +50,7 @@ commands_list = [
     "volume up",
     "brightness up",
     "brightness down",
-    "bottom right"
+    "bottom right",
     "restart",
     "sleep",
     "user",
@@ -179,6 +180,14 @@ def processcmd(command):
         print("AI Error: That question seems to be causing an issue. Please try rephrasing.")
         print(f"Error Details: {e}")
         return "Command not recognized. Please try again."
+    except exceptions.QuotaExceeded as e:
+        print("AI Error: You have exceeded your API quota. Please check your API usage or try again later.")
+        print(f"Error Details: {e}")
+        return "API Quota Exceeded. Please try again later."
+    except exceptions.ResourceExhausted as e:
+        print("AI Error: The API is currently experiencing high traffic. Please try again after some time.")
+        print(f"Error Details: {e}")
+        return "API Resource Exhausted. Please try again later."
     except Exception as e:
         print("AI Error: Sorry, something went wrong.")
         print(f"Error: {e}")
