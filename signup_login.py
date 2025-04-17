@@ -134,7 +134,7 @@ class Ui_self(QtWidgets.QMainWindow):
             }
         """)
         self.pushButton_show_password.setObjectName("pushButton_show_password")
-        self.pushButton_show_password.setText("👁️")
+        self.pushButton_show_password.setText("🔓")
 
         self.lineEdit_confirm_password = QtWidgets.QLineEdit(self.frame_signup)
         self.lineEdit_confirm_password.setGeometry(QtCore.QRect(60, 340, 531, 41))
@@ -223,7 +223,7 @@ class Ui_self(QtWidgets.QMainWindow):
             }
         """)
         self.pushButton_show_login_password.setObjectName("pushButton_show_login_password")
-        self.pushButton_show_login_password.setText("👁️")
+        self.pushButton_show_login_password.setText("🔓")
 
         self.label_warning_login = QtWidgets.QLabel(self.frame_login)
         self.label_warning_login.setGeometry(QtCore.QRect(60, 290, 400, 20))
@@ -266,7 +266,7 @@ class Ui_self(QtWidgets.QMainWindow):
         else:
             self.lineEdit_password.setEchoMode(QtWidgets.QLineEdit.Password)
             self.lineEdit_confirm_password.setEchoMode(QtWidgets.QLineEdit.Password)
-            self.pushButton_show_password.setText("👁️")
+            self.pushButton_show_password.setText("🔓")
 
     def toggle_login_password(self):
         if self.lineEdit_login_password.echoMode() == QtWidgets.QLineEdit.Password:
@@ -274,7 +274,7 @@ class Ui_self(QtWidgets.QMainWindow):
             self.pushButton_show_login_password.setText("🔒")
         else:
             self.lineEdit_login_password.setEchoMode(QtWidgets.QLineEdit.Password)
-            self.pushButton_show_login_password.setText("👁️")
+            self.pushButton_show_login_password.setText("🔓")
 
     # ============================ Input Validators =============================
     def onPasswordChanged(self):
