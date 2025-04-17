@@ -4,7 +4,6 @@ import os
 import threading
 import time
 import re
-import datetime
 # ==============================================================================
 
 
@@ -782,7 +781,6 @@ class NovaInterface(QWidget):
         while len(number) <= 9:
             number = CustomInputBox.show_input_dialog(f"The provided phone number have only {len(number)} digits Please Enter again")
         in_custom_message_box = False
-        now = datetime.now()
         country_code = "+91"
         number = f"{country_code}{number}"
         threading.Thread(target=kit.sendwhatmsg_instantly, args=(number, message)).start()
