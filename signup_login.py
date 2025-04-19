@@ -340,7 +340,7 @@ NOVA is your intelligent desktop assistant, designed to seamlessly control your 
 Let NOVA handle the details, so you can focus on what matters!
 """, B1="learn More", B2="Launch Nova")
             if r:
-                webbrowser.open("https://github.com/Siddiq2772/nova_assistant")
+                webbrowser.open("https://amshadab.github.io/Nova-Landing-Page/")
                 self.open_main()
             else:
                 self.open_main()

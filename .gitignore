@@ -15,5 +15,6 @@ signup_login.spec
 build/
 dist/
 temp.py
+user_config.txt
 
 
