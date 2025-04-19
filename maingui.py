@@ -249,11 +249,6 @@ class ChatWindow(QWidget, QThread):
         """) 
 
         scrollbar = self.scroll_area.verticalScrollBar()
-        self.animation = QPropertyAnimation(scrollbar, b"value")
-        self.animation.setDuration(500)
-        self.animation.setStartValue(scrollbar.value())
-        self.animation.setEndValue(scrollbar.maximum())
-        self.animation.start()
         # ==================================================================================
 
     # ============================== Send Button Function ===============================
